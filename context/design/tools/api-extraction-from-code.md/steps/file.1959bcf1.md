@@ -1,3 +1,12 @@
+---
+timestamp: 'Wed Oct 22 2025 21:31:46 GMT-0400 (Eastern Daylight Time)'
+parent: '[[..\20251022_213146.451998af.md]]'
+content_id: 1959bcf10d64e4535c85cc6b5554ce60ba3bdf21d36ad5732988788c0c46dd98
+---
+
+# file: src/concepts/Transaction/TransactionConcept.ts
+
+```typescript
 import { Collection, Db } from "npm:mongodb";
 import { parse } from "npm:csv-parse/sync";
 
@@ -128,15 +137,15 @@ export default class TransactionConcept {
    */
   async getTransaction(owner_id: Id, tx_id: Id): Promise<TransactionDoc>;
   async getTransaction(
-    payload: { owner_id: string; tx_id: string },
+    payload: { owner_id: Id; tx_id: Id },
   ): Promise<TransactionDoc>;
   async getTransaction(
-    a: Id | { owner_id: string; tx_id: string },
+    a: Id | { owner_id: Id; tx_id: Id },
     b?: Id,
   ): Promise<TransactionDoc> {
     // narrow both styles
-    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
-    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
+    const owner_id = a instanceof Id ? a : a.owner_id;
+    const tx_id = a instanceof Id ? b! : a.tx_id;
 
     const ownerIdStr = owner_id.toString();
     const txMongoId = this.makeTxMongoId(tx_id);
@@ -167,15 +176,15 @@ export default class TransactionConcept {
    */
   async mark_labeled(tx_id: Id, requester_id: Id): Promise<{ tx_id: Id }>;
   async mark_labeled(
-    payload: { tx_id: string; requester_id: string },
+    payload: { tx_id: Id; requester_id: Id },
   ): Promise<{ tx_id: Id }>;
   async mark_labeled(
-    a: Id | { tx_id: string; requester_id: string },
+    a: Id | { tx_id: Id; requester_id: Id },
     b?: Id,
   ): Promise<{ tx_id: Id }> {
     // narrow both styles
-    const tx_id = a instanceof Id ? a : Id.from(a.tx_id);
-    const requester_id = a instanceof Id ? b! : Id.from(a.requester_id);
+    const tx_id = a instanceof Id ? a : a.tx_id;
+    const requester_id = a instanceof Id ? b! : a.requester_id;
 
     const txMongoId = this.makeTxMongoId(tx_id);
     const requesterIdStr = requester_id.toString();
@@ -429,10 +438,10 @@ export default class TransactionConcept {
     fileContent: string,
   ): Promise<void>;
   async import_transactions(
-    payload: { owner_id: string; fileContent: string },
+    payload: { owner_id: Id; fileContent: string },
   ): Promise<void>;
   async import_transactions(
-    a: Id | { owner_id: string; fileContent: unknown },
+    a: Id | { owner_id: Id; fileContent: unknown },
     b?: string,
   ): Promise<void> {
     // narrow both styles
@@ -442,7 +451,7 @@ export default class TransactionConcept {
     }
 
     // narrow both styles
-    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const owner_id = a instanceof Id ? a : a.owner_id;
     const fileContent = a instanceof Id ? String(b) : String(a.fileContent);
 
     if (!owner_id) {
@@ -480,12 +489,12 @@ export default class TransactionConcept {
    */
   async get_unlabeled_transactions(owner_id: Id): Promise<TransactionDoc[]>;
   async get_unlabeled_transactions(
-    payload: { owner_id: string },
+    payload: { owner_id: Id },
   ): Promise<TransactionDoc[]>;
   async get_unlabeled_transactions(
-    a: Id | { owner_id: string },
+    a: Id | { owner_id: Id },
   ): Promise<TransactionDoc[]> {
-    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const owner_id = a instanceof Id ? a : a.owner_id;
     return await this.transactions.find({
       owner_id: owner_id.toString(),
       status: TransactionStatus.UNLABELED,
@@ -500,12 +509,12 @@ export default class TransactionConcept {
    */
   async get_labeled_transactions(owner_id: Id): Promise<TransactionDoc[]>;
   async get_labeled_transactions(
-    payload: { owner_id: string },
+    payload: { owner_id: Id },
   ): Promise<TransactionDoc[]>;
   async get_labeled_transactions(
-    a: Id | { owner_id: string },
+    a: Id | { owner_id: Id },
   ): Promise<TransactionDoc[]> {
-    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const owner_id = a instanceof Id ? a : a.owner_id;
     return await this.transactions.find({
       owner_id: owner_id.toString(),
       status: TransactionStatus.LABELED,
@@ -518,15 +527,10 @@ export default class TransactionConcept {
    * in TransactionConcept where transaction data is authoritative.
    */
   async getTxInfo(owner_id: Id, tx_id: Id): Promise<ParsedTransactionInfo>;
-  async getTxInfo(
-    payload: { owner_id: string; tx_id: string },
-  ): Promise<ParsedTransactionInfo>;
-  async getTxInfo(
-    a: Id | { owner_id: string; tx_id: string },
-    b?: Id,
-  ): Promise<ParsedTransactionInfo> {
-    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
-    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
+  async getTxInfo(payload: { owner_id: Id; tx_id: Id }): Promise<ParsedTransactionInfo>;
+  async getTxInfo(a: Id | { owner_id: Id; tx_id: Id }, b?: Id): Promise<ParsedTransactionInfo> {
+    const owner_id = a instanceof Id ? a : a.owner_id;
+    const tx_id = a instanceof Id ? b! : a.tx_id;
 
     const tx = await this.getTransaction(owner_id, tx_id);
     // map TransactionDoc -> ParsedTransactionInfo
@@ -537,3 +541,72 @@ export default class TransactionConcept {
     };
   }
 }
+
+```
+
+## User Concept
+
+Specification:
+
+**concept:** User\[ID]
+
+**purpose:**\
+establish a unique identity for each person and control access to app functionality so that data is isolated per account
+
+**principle:**\
+when a user chooses a category for a transaction, they create a label linking that transaction to the chosen category, making its purpose explicit in their records.
+if the user stages labels and then finalizes, each transaction gains exactly one active label reflecting that choice; if the user cancels, no labels are applied.
+suggestions may inform staging but never change state until finalized.\
+**state:**
+
+> a set of Users with
+>
+> > a user\_id ID\
+> > an email String\
+> > a name String\
+> > a password\_hash String\
+> > a status {ACTIVE | INACTIVE}
+
+**actions:**
+
+> register(email: String, name: String, password: String): (user: User)
+>
+> > *requires:*\
+> > email is not used by any existing user\
+> > *effects:*\
+> > creates a new user with a fresh user\_id, password\_hash derived from password, status ACTIVE; adds the user to Users; returns the created user
+
+> authenticate(email: String, password: String): (user: User)
+>
+> > *requires:*\
+> > there exists a user with the given email whose password\_hash matches password and whose status is ACTIVE\
+> > *effects:*\
+> > returns that user
+
+> deactivate(user\_id: ID)
+>
+> > *requires:*\
+> > a user with user\_id exists\
+> > *effects:*\
+> > sets the user's status to INACTIVE
+
+> changePassword(user\_id: ID, old\_password: String, new\_password: String): (ok: Boolean)
+>
+> > *requires:*\
+> > a user with user\_id exists and old\_password matches the stored password\_hash\
+> > *effects:*\
+> > updates password\_hash with new\_password; returns true
+
+> reactivate(email: String, new\_password: String): (ok: Boolean)
+>
+> > *requires:*\
+> > a user with the given email exists and `status = INACTIVE`\
+> > *effects:*\
+> > sets the user’s `status` to ACTIVE; updates the user’s `password_hash` with the hash of `new_password`; returns true
+
+**invariants:**
+
+* email uniquely identifies a single user
+* user\_id is unique and never reused
+
+Implementation:

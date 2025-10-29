@@ -40,6 +40,12 @@
 >> *effects:*  
 >> creates a StagedLabel for this user and transaction with the provided info and category. Adds it to the stagedLabels (that are not yet commited). Returns the created stagedLabel.
 ---
+> **discard**(user_id : ID, tx_id : ID, tx_name : String, tx_merchant : String)  : (label_tx_id : ID)
+>> *requires:* 
+>> no committed label exists for `tx_id`;  no stagedLabel with ID tx_id.
+>> *effects:*  
+>> creates a StagedLabel for this user and transaction, assigning it to the built-in **Trash** category.
+---
 > **finalize**(user_id : ID)
 >> *requires:*  
 >> for each StagedLabel belonging to the user:  no committed label exists for `tx_id`  

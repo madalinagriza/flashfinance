@@ -1,16 +1,11 @@
 import LabelConcept, { Id, TransactionInfo } from "../LabelConcept.ts";
-import { Config, GeminiLLM } from "../gemini-llm.ts";
 import { testDb } from "@utils/database.ts";
-import rawCfg from "../../../../config.json" with { type: "json" };
-
-const config: Config = rawCfg as Config;
 
 type TxInfo = { tx_id: Id; tx_name: string; tx_merchant: string };
 
 export async function main() {
   const [db, client] = await testDb();
   const store = new LabelConcept(db);
-  const llm = new GeminiLLM(config);
 
   try {
     const user = Id.from("u3");
@@ -83,7 +78,7 @@ export async function main() {
 
     console.log("=== TEST 3 — MANY CATEGORIES + NEAR-COLLISIONS ===");
     for (const t of txs) {
-      const suggested = await store.suggest(llm, user, categoriesTuples, t);
+      const suggested = await store.suggest(user, categoriesTuples, t);
       console.log(
         `Tx ${t.tx_id.toString()} | ${t.tx_name} | ${t.tx_merchant} -> ${suggested.name}`,
       );

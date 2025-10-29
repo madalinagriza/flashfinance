@@ -1,64 +1,3 @@
-[@api-extraction-from-spec](api-extraction-from-spec.md)
-
-# Extracting from code
-
-The following is an explanation of how concepts are implemented, for the purposes of understanding how to extract an API.
-
-[@implementing-concepts](../background/implementing-concepts.md)
-
-# prompt: 
-
-Now, analyze the following Concept Implementation and generate the API documentation based on these instructions. In your previous calls you missed including some APIs, missing_apis.md is the list of APIs that also need included. It is an absolute rule.
-
-[@missing_apis](../../missing_apis.md)
-## Category Concept
-
-Specification:
-
-[@Spec](../../src/concepts/Category/Spec.md)
-
-Implementation:
-
-[@CategoryConcept.ts](/src/concepts/Category/CategoryConcept.ts)
-
-
-## Label Concept
-
-Specification:
-
-[@Spec](../../src/concepts/Label/Spec.md)
-
-Implementation:
-
-[@CategoryConcept.ts](/src/concepts/Label/LabelConcept.ts)
-
-
-
-## Transaction Concept
-
-Specification:
-
-[@Spec](../../src/concepts/Transaction/Spec.md)
-
-Implementation:
-
-[@TransactionConcept.ts](/src/concepts/Transaction/TransactionConcept.ts)
-
-
-## User Concept
-
-Specification:
-
-[@Spec](../../src/concepts/User/Spec.md)
-
-Implementation:
-
-[@CategoryConcept.ts](/src/concepts/User/UserConcept.ts)
-
-
-
-# response:
-
 # API Specification: Category Concept
 
 **Purpose:** allow users to define and manage meaningful groupings of their transactions
@@ -253,11 +192,9 @@ Implementation:
 
 **Success Response Body (Query):**
 ```json
-[
-  {
-    "name": "string"
-  }
-]
+{
+  "name": "string"
+}
 ```
 
 **Error Response Body:**
@@ -300,6 +237,43 @@ Implementation:
 }
 ```
 ---
+### POST /api/Category/_listTransactions
+
+**Description:** Retrieves all transaction entries recorded for a specific user and category.
+
+**Requirements:**
+- The user and category must exist.
+
+**Effects:**
+- Returns an array of transaction metric entries associated with the user and category.
+
+**Request Body:**
+```json
+{
+  "owner_id": "ID",
+  "category_id": "ID"
+}
+```
+
+**Success Response Body (Query):**
+```json
+[
+  {
+    "tx_id": "string",
+    "amount": "Number",
+    "tx_date": "Date"
+  }
+]
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
+
 ### POST /api/Category/getMetricStats
 
 **Description:** Computes and returns spending statistics for a category over a given period.
@@ -317,8 +291,8 @@ Implementation:
   "owner_id": "ID",
   "category_id": "ID",
   "period": {
-    "startDate": "Date",
-    "endDate": "Date"
+    "startDate": "string",
+    "endDate": "string"
   }
 }
 ```
@@ -331,6 +305,41 @@ Implementation:
   "average_per_day": "Number",
   "days": "Number"
 }
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
+### POST /api/Category/getCategoryNamesAndOwners
+
+**Description:** Retrieves the names, IDs, and owners of all categories for a given user.
+
+**Requirements:**
+- The `owner_id` must correspond to an existing user.
+
+**Effects:**
+- Returns an array of objects, each containing a category's ID, name, and owner ID.
+
+**Request Body:**
+```json
+{
+  "owner_id": "ID"
+}
+```
+
+**Success Response Body (Query):**
+```json
+[
+  {
+    "category_id": "ID",
+    "name": "string",
+    "owner_id": "ID"
+  }
+]
 ```
 
 **Error Response Body:**
@@ -767,6 +776,43 @@ Implementation:
 }
 ```
 ---
+### POST /api/Label/all
+
+**Description:** Retrieves all labels for a user.
+
+**Requirements:**
+- The `user_id` must exist.
+
+**Effects:**
+- Returns an array of all label documents for the user.
+
+**Request Body:**
+```json
+{
+  "user_id": "ID"
+}
+```
+
+**Success Response Body (Query):**
+```json
+[
+  {
+    "_id": "string",
+    "user_id": "ID",
+    "tx_id": "ID",
+    "category_id": "ID",
+    "created_at": "Date"
+  }
+]
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
 ### POST /api/Label/hasAnyLabelsForCategory
 
 **Description:** Checks if a category is referenced by any of a user's labels.
@@ -948,6 +994,45 @@ Implementation:
 }
 ```
 ---
+### POST /api/Transaction/get_unlabeled_transactions
+
+**Description:** Retrieves all of a user's transactions that have the status `UNLABELED`.
+
+**Requirements:**
+- The `owner_id` must correspond to an existing user.
+
+**Effects:**
+- Returns an array of transaction documents with a status of `UNLABELED`.
+
+**Request Body:**
+```json
+{
+  "owner_id": "ID"
+}
+```
+
+**Success Response Body (Query):**
+```json
+[
+  {
+    "_id": "string",
+    "tx_id": "ID",
+    "owner_id": "ID",
+    "date": "Date",
+    "merchant_text": "string",
+    "amount": "Number",
+    "status": "string"
+  }
+]
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
 ### POST /api/Transaction/getTxInfo
 
 **Description:** Retrieves the parsed information (date, merchant, amount) for a single transaction.
@@ -973,6 +1058,45 @@ Implementation:
     "date": "Date",
     "merchant_text": "string",
     "amount": "Number"
+  }
+]
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
+### POST /api/Transaction/list_all
+
+**Description:** Retrieves all transactions for a user.
+
+**Requirements:**
+- The `owner_id` must correspond to an existing user.
+
+**Effects:**
+- Returns an array of all transaction documents for the user.
+
+**Request Body:**
+```json
+{
+  "owner_id": "ID"
+}
+```
+
+**Success Response Body (Query):**
+```json
+[
+  {
+    "_id": "string",
+    "tx_id": "ID",
+    "owner_id": "ID",
+    "date": "Date",
+    "merchant_text": "string",
+    "amount": "Number",
+    "status": "string"
   }
 ]
 ```

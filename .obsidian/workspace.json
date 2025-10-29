@@ -97,6 +97,62 @@
             "state": {
               "type": "markdown",
               "state": {
+                "file": "context/design/tools/api-extraction-from-code.md/20251011_223405.71e58731.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "20251011_223405.71e58731"
+            }
+          },
+          {
+            "id": "dc354f4c2eb49fed",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "context/design/tools/api-extraction-from-code.md/20251011_223405.71e58731.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "20251011_223405.71e58731"
+            }
+          },
+          {
+            "id": "ab9790f16df6ab5f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "context/design/tools/api-extraction-from-code.md/steps/_.3731a859.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "_.3731a859"
+            }
+          },
+          {
+            "id": "0901496c0728ee36",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "context/design/tools/api-extraction-from-code.md/20251011_223405.71e58731.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "20251011_223405.71e58731"
+            }
+          },
+          {
+            "id": "d59f792fbdd73dba",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
                 "file": "design/tools/api-extraction-from-code.md",
                 "mode": "source",
                 "source": false
@@ -106,16 +162,17 @@
             }
           },
           {
-            "id": "0901496c0728ee36",
+            "id": "f2fc6584c6bfe230",
             "type": "leaf",
             "state": {
-              "type": "bases",
+              "type": "markdown",
               "state": {
-                "file": "Untitled.base",
-                "viewName": "Table"
+                "file": "design/tools/old-api-extraction-from-code.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-table",
-              "title": "Untitled"
+              "icon": "lucide-file",
+              "title": "old-api-extraction-from-code"
             }
           },
           {
@@ -161,7 +218,7 @@
             }
           }
         ],
-        "currentTab": 6
+        "currentTab": 10
       }
     ],
     "direction": "vertical"
@@ -193,7 +250,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "chat",
+                "query": "API Specification: User Concept",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -309,44 +366,45 @@
       "bases:Create new base": false
     }
   },
-  "active": "cce0921eafc320e8",
+  "active": "d59f792fbdd73dba",
   "lastOpenFiles": [
-    "context/design/tools/api-extraction-from-code.md/20251021_205936.f6b594f9.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.0c12b2c5.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.852d2438.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.d64553ab.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.55849fe3.md",
-    "context/design/tools/api-extraction-from-code.md/steps/file.cb27cfb7.md",
-    "context/src/concepts/Category/CategoryConcept.ts/20251021_205847.a76ea505.md",
-    "context/design/tools/api-extraction-from-code.md/steps/file.ed044b9c.md",
-    "context/src/concepts/User/UserConcept.ts/20251021_203943.4b6c6dd8.md",
-    "context/src/concepts/Transaction/TransactionConcept.ts/20251021_203943.5ae43b80.md",
-    "context/src/concepts/Label/LabelConcept.ts/20251021_203943.f0a2e74b.md",
-    "context/src/concepts/Category/CategoryConcept.ts/20251021_203943.8f3c2161.md",
-    "src/concepts/Transaction/Context_Chat.md",
-    "context/src/concepts/Transaction/Context_Chat.md/20251021_195458.d5b84737.md",
-    "context/src/concepts/Transaction/Context_Chat.md/steps/response.c5a6881f.md",
-    "context/src/concepts/Transaction/test-actions/test-parsing.ts/20251021_195408.9bec8341.md",
-    "context/src/concepts/Transaction/test-actions/test-parsing-edge-cases.ts/20251021_195408.afca44c0.md",
+    "src/concepts/Category/Oldcategory.ts",
+    "src/utils/Id.ts",
+    "old-apis.md",
+    "all_apis.md",
+    "context/design/tools/api-extraction-from-code.md/20251028_211259.af66c5de.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.35c9ff36.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.78af6226.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.70a3928c.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.86b84bd9.md",
+    "context/design/tools/api-extraction-from-code.md/20251028_211154.1ae0445e.md",
+    "context/design/tools/api-extraction-from-code.md/steps/_.ae4fa8d5.md",
+    "context/design/tools/api-extraction-from-code.md/steps/prompt.b1eb0ace.md",
+    "missing_apis.md",
+    "context/design/tools/api-extraction-from-code.md/20251028_205932.95ca8de5.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.a179c0d5.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.d9dbc8b7.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.afc93f4f.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.7bb8ef62.md",
+    "context/design/tools/api-extraction-from-code.md/steps/response.90346d5a.md",
+    "context/design/tools/api-extraction-from-code.md/20251028_205838.b7dac12c.md",
+    "context/design/tools/api-extraction-from-code.md/steps/file.dcdd5ccc.md",
+    "context/design/tools/api-extraction-from-code.md/steps/file.316197a2.md",
+    "context/design/tools/api-extraction-from-code.md/steps/prompt.e39cffd6.md",
+    "context/src/concepts/Transaction/TransactionConcept.ts/20251028_205838.dfb47613.md",
+    "context/design/tools/api-extraction-from-code.md/20251027_215214.3f022557.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.3dd7d5c2.md",
+    "context/design/tools/api-extraction-from-code.md/steps/API Specification.de3ed321.md",
+    "Untitled 5.canvas",
+    "Untitled 5.base",
+    "Untitled.base",
     "context/src/concepts/Transaction/test-actions/test-parsing.ts",
     "context/src/concepts/Transaction/test-actions/test-parsing-edge-cases.ts",
     "context/src/concepts/Transaction/test-actions",
-    "context/src/concepts/Transaction/Context_Chat.md/steps/prompt.89bd3fb9.md",
-    "context/src/concepts/Transaction/Context_Chat.md/steps/file.afca44c0.md",
-    "context/src/concepts/Transaction/Context_Chat.md/steps/file.9bec8341.md",
-    "context/src/concepts/Transaction/Context_Chat.md/steps/file.2bc5e9e6.md",
     "context/src/concepts/Transaction/Context_Chat.md/steps",
-    "context/src/concepts/Transaction/Context_Chat.md/20251021_195408.b2640035.md",
-    "context/src/concepts/Transaction/Context_Chat.md",
-    "context/src/concepts/Transaction/TransactionConcept.ts/20251021_195408.2bc5e9e6.md",
-    "src/concepts/Label/Context_Chat.md",
-    "design/tools/api-extraction-from-code.md",
     "src/concepts/Transaction/test-actions/sample/empty.csv",
     "src/concepts/Transaction/test-actions/sample/missing-amount-col.csv",
     "src/concepts/Transaction/test-actions/sample/zero-negative-amounts.csv",
-    "src/concepts/Transaction/test-actions/sample/inflows-only.csv",
-    "src/concepts/Transaction/test-actions/sample/headers-only.csv",
-    "context/src/concepts/User/UserConcept.ts",
     "Untitled.canvas",
     "Untitled 2.canvas",
     "Untitled 1.canvas",

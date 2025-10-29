@@ -2,7 +2,7 @@ import { assertEquals, assertExists } from "jsr:@std/assert";
 import { testDb } from "@utils/database.ts";
 import CategoryConcept, { Id, Period } from "../CategoryConcept.ts"; // Adjust path if CategoryConcept.ts is not in the parent directory
 
-Deno.test("CategoryConcept: renaming a category does not affect its existing metrics", async () => {
+Deno.test("CategoryConcept: renaming a category preserves recorded metric transactions", async () => {
   const [db, client] = await testDb();
   const store = new CategoryConcept(db);
 
@@ -11,40 +11,50 @@ Deno.test("CategoryConcept: renaming a category does not affect its existing met
     const initialName = "Rent";
     const newName = "Housing Expenses";
 
+    const txIdJan = Id.from("rename_metric_tx_jan");
+    const txIdFeb = Id.from("rename_metric_tx_feb");
+
     const periodJan = Period.from(
       new Date("2023-01-01T00:00:00.000Z"),
       new Date("2023-01-31T23:59:59.999Z"),
     );
-    const totalJan = 1200.50;
-
     const periodFeb = Period.from(
       new Date("2023-02-01T00:00:00.000Z"),
       new Date("2023-02-28T23:59:59.999Z"),
     );
-    const totalFeb = 1250.75;
 
-    // 1. Setup: Create category and set two metrics.
+    // 1. Setup: Create category and record two metric transactions.
     const { category_id: categoryId } = await store.create(
       ownerId,
       initialName,
     );
     assertExists(categoryId, "Category should be created successfully.");
-    await store.setMetricTotal(ownerId, categoryId, periodJan, totalJan);
-    await store.setMetricTotal(ownerId, categoryId, periodFeb, totalFeb);
+    await store.addTransaction({
+      owner_id: ownerId.toString(),
+      category_id: categoryId.toString(),
+      tx_id: txIdJan.toString(),
+      amount: 1200.5,
+      tx_date: new Date("2023-01-15T12:00:00.000Z"),
+    });
+    await store.addTransaction({
+      owner_id: ownerId.toString(),
+      category_id: categoryId.toString(),
+      tx_id: txIdFeb.toString(),
+      amount: 1250.75,
+      tx_date: new Date("2023-02-10T12:00:00.000Z"),
+    });
 
-    // Pre-verification: Confirm metrics are retrievable before rename.
-    const metricJanBeforeRename = await store.getMetric(
+    const transactionsBeforeRename = await store.listTransactions(
       ownerId,
       categoryId,
-      periodJan,
     );
     assertEquals(
-      metricJanBeforeRename?.current_total,
-      totalJan,
-      "January metric total should be correct before rename.",
+      transactionsBeforeRename.map((t) => t.tx_id).sort(),
+      [txIdJan.toString(), txIdFeb.toString()].sort(),
+      "Transactions should be recorded before rename.",
     );
 
-    // 2. Proof: Rename the category succeeds.
+    // 2. Rename the category succeeds.
     const { category_id: renamedCategoryId } = await store.rename(
       ownerId,
       categoryId,
@@ -56,42 +66,28 @@ Deno.test("CategoryConcept: renaming a category does not affect its existing met
       "Renamed category ID should match original ID.",
     );
 
-    // 3. Proof: Metrics are still retrievable with the original category_id and their totals are unchanged.
-    const metricJanAfterRename = await store.getMetric(
+    // 3. Transactions and stats remain unchanged post-rename.
+    const transactionsAfterRename = await store.listTransactions(
       ownerId,
       categoryId,
-      periodJan,
     );
     assertEquals(
-      metricJanAfterRename?.current_total,
-      totalJan,
-      "January metric total should remain unchanged after rename.",
-    );
-    const metricFebAfterRename = await store.getMetric(
-      ownerId,
-      categoryId,
-      periodFeb,
-    );
-    assertEquals(
-      metricFebAfterRename?.current_total,
-      totalFeb,
-      "February metric total should remain unchanged after rename.",
+      transactionsAfterRename.map((t) => t.tx_id).sort(),
+      [txIdJan.toString(), txIdFeb.toString()].sort(),
+      "Transactions should remain after rename.",
     );
 
-    // 4. Proof: `listMetrics` still returns all associated metrics correctly, maintaining sort order.
-    const listedMetricsAfterRename = await store.listMetrics(
-      ownerId,
-      categoryId,
-    );
+    const statsJan = await store.getMetricStats(ownerId, categoryId, periodJan);
     assertEquals(
-      listedMetricsAfterRename.length,
-      2,
-      "listMetrics should still return two metrics.",
+      statsJan.total_amount,
+      1200.5,
+      "January totals should remain after rename.",
     );
+    const statsFeb = await store.getMetricStats(ownerId, categoryId, periodFeb);
     assertEquals(
-      listedMetricsAfterRename[0].period_start.toISOString(),
-      periodJan.startDate.toISOString(),
-      "First listed metric should be January (sorted).",
+      statsFeb.total_amount,
+      1250.75,
+      "February totals should remain after rename.",
     );
   } finally {
     await client.close(true);
@@ -125,43 +121,61 @@ Deno.test("CategoryConcept: cross-owner isolation for categories and metrics", a
       "Category IDs for different owners with same name should be distinct.",
     );
 
-    // Define a period
     const period = Period.from(new Date("2023-01-01"), new Date("2023-01-31"));
+    const txA = Id.from("isolation_tx_A1");
     const totalValue = 123.45;
 
-    // 3. Call setMetricTotal only for owner A’s category for a given Period
-    await store.setMetricTotal(ownerA, categoryA_id, period, totalValue);
+    await store.addTransaction({
+      owner_id: ownerA.toString(),
+      category_id: categoryA_id.toString(),
+      tx_id: txA.toString(),
+      amount: totalValue,
+      tx_date: new Date("2023-01-10"),
+    });
 
-    // 4. Assertions:
-    // (1) getMetric(ownerA, catA, period) returns the expected current_total
-    const metricForOwnerA = await store.getMetric(
-      ownerA,
-      categoryA_id,
-      period,
-    );
-    assertExists(metricForOwnerA, "Metric for owner A should exist.");
+    const statsA = await store.getMetricStats(ownerA, categoryA_id, period);
     assertEquals(
-      metricForOwnerA.current_total,
+      statsA.total_amount,
       totalValue,
-      "Metric for owner A should have the expected total.",
-    );
-
-    // (2) getMetric(ownerB, catB, period) returns null
-    const metricForOwnerB = await store.getMetric(
-      ownerB,
-      categoryB_id,
-      period,
+      "Owner A stats should include recorded amount.",
     );
     assertEquals(
-      metricForOwnerB,
-      null,
-      "Metric for owner B should be null, demonstrating isolation.",
+      statsA.transaction_count,
+      1,
+      "Owner A should have one transaction recorded.",
+    );
+
+    const transactionsA = await store.listTransactions(ownerA, categoryA_id);
+    assertEquals(
+      transactionsA.length,
+      1,
+      "Owner A should list one transaction.",
+    );
+    assertEquals(
+      transactionsA[0].tx_id,
+      txA.toString(),
+      "Owner A transaction should match added tx.",
+    );
+
+    const statsB = await store.getMetricStats(ownerB, categoryB_id, period);
+    assertEquals(statsB.total_amount, 0, "Owner B stats should remain empty.");
+    assertEquals(
+      statsB.transaction_count,
+      0,
+      "Owner B should have no transactions recorded.",
+    );
+
+    const transactionsB = await store.listTransactions(ownerB, categoryB_id);
+    assertEquals(
+      transactionsB.length,
+      0,
+      "Owner B should list no transactions, demonstrating isolation.",
     );
   } finally {
     await client.close(true);
   }
 });
-Deno.test("CategoryConcept: deleteMetricsForCategory works independently and returns count", async () => {
+Deno.test("CategoryConcept: deleteMetricsForCategory removes metric bucket", async () => {
   const [db, client] = await testDb();
   const store = new CategoryConcept(db);
 
@@ -175,43 +189,59 @@ Deno.test("CategoryConcept: deleteMetricsForCategory works independently and ret
     );
     assertExists(categoryId, "Category should be created.");
 
-    // Define three distinct periods
-    const period1 = Period.from(new Date("2023-01-01"), new Date("2023-01-31"));
-    const period2 = Period.from(new Date("2023-02-01"), new Date("2023-02-28"));
-    const period3 = Period.from(new Date("2023-03-01"), new Date("2023-03-31"));
+    await store.addTransaction({
+      owner_id: ownerId.toString(),
+      category_id: categoryId.toString(),
+      tx_id: Id.from("delete_metric_tx_1").toString(),
+      amount: 100,
+      tx_date: new Date("2023-01-10"),
+    });
+    await store.addTransaction({
+      owner_id: ownerId.toString(),
+      category_id: categoryId.toString(),
+      tx_id: Id.from("delete_metric_tx_2").toString(),
+      amount: 200,
+      tx_date: new Date("2023-02-12"),
+    });
 
-    // 2. Call setMetricTotal three times for three distinct Periods for that category
-    await store.setMetricTotal(ownerId, categoryId, period1, 100);
-    await store.setMetricTotal(ownerId, categoryId, period2, 200);
-    await store.setMetricTotal(ownerId, categoryId, period3, 300);
-
-    // 3. Assert via listMetrics that 3 metrics exist
-    const metricsBeforeDelete = await store.listMetrics(ownerId, categoryId);
+    const transactionsBeforeDelete = await store.listTransactions(
+      ownerId,
+      categoryId,
+    );
     assertEquals(
-      metricsBeforeDelete.length,
-      3,
-      "Initially, 3 metrics should exist.",
+      transactionsBeforeDelete.length,
+      2,
+      "Two transactions should exist before deletion.",
     );
 
-    // 4. Call deleteMetricsForCategory(owner, category)
     const deletedCount = await store.deleteMetricsForCategory(
       ownerId,
       categoryId,
     );
-
-    // 5. Assert it returns 3
     assertEquals(
       deletedCount,
-      3,
-      "deleteMetricsForCategory should return 3, the number of deleted metrics.",
+      1,
+      "deleteMetricsForCategory should remove the single metric bucket.",
     );
 
-    // 6. Assert that listMetrics(owner, category) is now empty
-    const metricsAfterDelete = await store.listMetrics(ownerId, categoryId);
+    const transactionsAfterDelete = await store.listTransactions(
+      ownerId,
+      categoryId,
+    );
     assertEquals(
-      metricsAfterDelete.length,
+      transactionsAfterDelete.length,
       0,
-      "After deletion, no metrics should remain for the category.",
+      "All metric transactions should be removed.",
+    );
+    const statsAfterDelete = await store.getMetricStats(
+      ownerId,
+      categoryId,
+      Period.from(new Date("2023-01-01"), new Date("2023-03-31")),
+    );
+    assertEquals(
+      statsAfterDelete.total_amount,
+      0,
+      "Stats should reset after deletion.",
     );
   } finally {
     await client.close(true);

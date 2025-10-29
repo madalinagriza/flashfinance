@@ -1,22 +1,5 @@
-// deno-lint-ignore no-unversioned-import
-import { Collection, Db } from "npm:mongodb";
-
-/**
- * Represents a unique identifier.
- * This class is copied directly from LabelConcept.ts as per the "don't interleave but follow structure" instruction,
- * to ensure consistent ID handling without directly importing a class from another concept's file.
- */
-export class Id {
-  private constructor(private value: string) {}
-
-  static from(value: string): Id {
-    return new Id(value);
-  }
-
-  toString(): string {
-    return this.value;
-  }
-}
+import { Collection, Db } from "mongodb";
+import { Id } from "../../utils/Id.ts";
 
 /**
  * Defines the possible status states for a user.
@@ -106,7 +89,9 @@ export default class UserConcept {
    */
 
   async register(email: string, name: string, password: string): Promise<User>;
-  async register(payload: { email: string; name: string; password: string }): Promise<User>;
+  async register(
+    payload: { email: string; name: string; password: string },
+  ): Promise<User>;
   async register(
     a: string | { email: unknown; name: unknown; password: unknown },
     b?: string,
@@ -116,7 +101,7 @@ export default class UserConcept {
     const email = typeof a === "object" ? String(a.email) : a;
     const name = typeof a === "object" ? String(a.name) : String(b);
     const password = typeof a === "object" ? String(a.password) : String(c);
-  if (
+    if (
       typeof email !== "string" ||
       typeof name !== "string" ||
       typeof password !== "string"
@@ -166,7 +151,9 @@ export default class UserConcept {
     }));
   }
   async authenticate(email: string, password: string): Promise<User>;
-  async authenticate(payload: { email: string; password: string }): Promise<User>;
+  async authenticate(
+    payload: { email: string; password: string },
+  ): Promise<User>;
   async authenticate(
     a: string | { email: unknown; password: unknown },
     b?: string,
@@ -206,10 +193,10 @@ export default class UserConcept {
   }
 
   async deactivate(user_id: Id): Promise<void>;
-  async deactivate(payload: { user_id: Id }): Promise<void>;
-  async deactivate(a: Id | { user_id: Id }): Promise<void> {
+  async deactivate(payload: { user_id: string }): Promise<void>;
+  async deactivate(a: Id | { user_id: string }): Promise<void> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
 
     // requires: a user with user_id exists
     const result = await this.users.updateOne(
@@ -232,14 +219,16 @@ export default class UserConcept {
     old_password: string,
     new_password: string,
   ): Promise<boolean>;
-  async changePassword(payload: { user_id: Id; old_password: string; new_password: string }): Promise<boolean>;
   async changePassword(
-    a: Id | { user_id: Id; old_password: unknown; new_password: unknown },
+    payload: { user_id: string; old_password: string; new_password: string },
+  ): Promise<boolean>;
+  async changePassword(
+    a: Id | { user_id: string; old_password: unknown; new_password: unknown },
     b?: string,
     c?: string,
   ): Promise<boolean> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
     const old_password = a instanceof Id ? String(b) : String(a.old_password);
     const new_password = a instanceof Id ? String(c) : String(a.new_password);
 
@@ -270,14 +259,18 @@ export default class UserConcept {
   }
 
   async reactivate(email: string, new_password: string): Promise<boolean>;
-  async reactivate(payload: { email: string; new_password: string }): Promise<boolean>;
+  async reactivate(
+    payload: { email: string; new_password: string },
+  ): Promise<boolean>;
   async reactivate(
     a: string | { email: unknown; new_password: unknown },
     b?: string,
   ): Promise<boolean> {
     // narrow both styles
     const email = typeof a === "object" ? String(a.email) : a;
-    const new_password = typeof a === "object" ? String(a.new_password) : String(b);
+    const new_password = typeof a === "object"
+      ? String(a.new_password)
+      : String(b);
 
     // requires: a user with this email exists and status = INACTIVE
     const normalizedEmail = email.trim().toLowerCase();
