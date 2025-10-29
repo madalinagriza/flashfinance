@@ -42,6 +42,7 @@ export class Period {
 }
 
 const PREFIX = "Category" + "."; // Using "Category" as prefix as per the concept
+const TRASH_CATEGORY_ID = Id.from("TRASH_CATEGORY");
 
 /**
  * Represents a Category record as stored in MongoDB.
@@ -456,6 +457,68 @@ export default class CategoryConcept {
           updated_at: new Date(),
         },
       },
+    );
+
+    return { ok: true };
+  }
+
+  async moveTransactionToTrash(
+    owner_id: Id,
+    from_category_id: Id,
+    tx_id: Id,
+  ): Promise<{ ok: boolean }>;
+  async moveTransactionToTrash(payload: {
+    owner_id: string;
+    from_category_id: string;
+    tx_id: string;
+  }): Promise<{ ok: boolean }>;
+  async moveTransactionToTrash(
+    a: Id | { owner_id: string; from_category_id: string; tx_id: string },
+    b?: Id,
+    c?: Id,
+  ): Promise<{ ok: boolean }> {
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const from_category_id = a instanceof Id ? b! : Id.from(a.from_category_id);
+    const tx_id = a instanceof Id ? c! : Id.from(a.tx_id);
+
+    const metricKey = `${owner_id.toString()}:${from_category_id.toString()}`;
+    const metricDoc = await this.categoryMetrics.findOne({ _id: metricKey });
+    if (!metricDoc) {
+      throw new Error("Metric bucket not found for move.");
+    }
+
+    const txIdStr = tx_id.toString();
+    const entry = metricDoc.transactions.find((item) => item.tx_id === txIdStr);
+    if (!entry) {
+      throw new Error(
+        `Transaction ${txIdStr} is not recorded for category ${from_category_id.toString()}.`,
+      );
+    }
+
+    await this.removeTransaction(owner_id, from_category_id, tx_id);
+
+    const trashKey = this.makeCategoryKey(owner_id, TRASH_CATEGORY_ID);
+    const trashDoc = await this.getCategoryById(owner_id, TRASH_CATEGORY_ID);
+    if (!trashDoc) {
+      const insertDoc: CategoryDoc = {
+        _id: trashKey,
+        owner_id: owner_id.toString(),
+        category_id: TRASH_CATEGORY_ID.toString(),
+        name: "Trash",
+      };
+      await this.categories.updateOne(
+        { _id: trashKey },
+        { $setOnInsert: insertDoc },
+        { upsert: true },
+      );
+    }
+
+    await this.addTransaction(
+      owner_id,
+      TRASH_CATEGORY_ID,
+      tx_id,
+      entry.amount,
+      entry.tx_date,
     );
 
     return { ok: true };

@@ -2,6 +2,7 @@
 import { assertEquals, assertExists, assertRejects } from "jsr:@std/assert";
 import { testDb } from "@utils/database.ts";
 import CategoryConcept, { Id, Period } from "../CategoryConcept.ts"; // Adjust path if CategoryConcept.ts is not in the parent directory
+const TRASH_CATEGORY_ID = Id.from("TRASH_CATEGORY");
 
 Deno.test("CategoryConcept: create action works and enforces name uniqueness per owner", async () => {
   const [db, client] = await testDb();
@@ -418,6 +419,67 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
   } finally {
     await client.close(true);
     console.log("Database client closed.");
+  }
+});
+Deno.test("CategoryConcept: moveTransactionToTrash removes and reassigns metrics", async () => {
+  const [db, client] = await testDb();
+  const store = new CategoryConcept(db);
+
+  try {
+    const ownerId = Id.from("metric_move_trash_owner");
+    const categoryName = "Dining";
+    const { category_id: sourceCategoryId } = await store.create({
+      owner_id: ownerId.toString(),
+      name: categoryName,
+    });
+    assertExists(sourceCategoryId, "Source category should be created.");
+
+    const txId = Id.from("tx_move_candidate");
+    const amount = 55.25;
+    const date = new Date("2024-02-15T00:00:00Z");
+
+    await store.addTransaction({
+      owner_id: ownerId.toString(),
+      category_id: sourceCategoryId.toString(),
+      tx_id: txId.toString(),
+      amount,
+      tx_date: date,
+    });
+
+    const moveResult = await store.moveTransactionToTrash({
+      owner_id: ownerId.toString(),
+      from_category_id: sourceCategoryId.toString(),
+      tx_id: txId.toString(),
+    });
+    assertEquals(moveResult.ok, true, "Move operation should succeed.");
+
+    const remaining = await store.listTransactions({
+      owner_id: ownerId.toString(),
+      category_id: sourceCategoryId.toString(),
+    });
+    assertEquals(remaining.length, 0, "Source category should no longer list the transaction.");
+
+    const trashTransactions = await store.listTransactions({
+      owner_id: ownerId.toString(),
+      category_id: TRASH_CATEGORY_ID.toString(),
+    });
+    assertEquals(trashTransactions.length, 1, "Trash category should contain the moved transaction.");
+    assertEquals(trashTransactions[0].tx_id, txId.toString(), "Transaction ID should match after move.");
+    assertEquals(trashTransactions[0].amount, amount, "Amount should be preserved when moving to trash.");
+    assertEquals(
+      new Date(trashTransactions[0].tx_date).toISOString(),
+      date.toISOString(),
+      "Transaction date should be preserved when moving to trash.",
+    );
+
+    const categories = await store.getCategoryNamesAndOwners();
+    const trashCategory = categories.find((c) =>
+      c.owner_id.toString() === ownerId.toString() && c.category_id === TRASH_CATEGORY_ID.toString()
+    );
+    assertExists(trashCategory, "Trash category record should exist for the owner once a transaction is moved.");
+    assertEquals(trashCategory.name, "Trash", "Trash category should have the canonical name 'Trash'.");
+  } finally {
+    await client.close(true);
   }
 });
 Deno.test("CategoryConcept: metric transaction tracking and stats work", async () => {
