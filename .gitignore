@@ -7,3 +7,5 @@ ctx.exe
 src/concepts/concepts.ts
 src/concepts/test_concepts.ts
 src/syncs/syncs.ts
+config.json
+node_modules

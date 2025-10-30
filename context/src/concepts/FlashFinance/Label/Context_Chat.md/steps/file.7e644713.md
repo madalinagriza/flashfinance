@@ -1,0 +1,337 @@
+---
+timestamp: 'Fri Oct 17 2025 19:32:48 GMT-0400 (Eastern Daylight Time)'
+parent: '[[..\20251017_193248.db1985bc.md]]'
+content_id: 7e644713d044b3b85b64468f34d304540ce4e7070d6a496b380ac221ca71f342
+---
+
+# file: src/concepts/FlashFinance/Label/test-actions/test-op-simple.ts
+
+```typescript
+import { assertEquals, assertExists, assertRejects } from "jsr:@std/assert";
+import { testDb } from "@utils/database.ts";
+import { Id, LabelStore } from "../label.ts";
+
+// The built-in Trash category ID, defined here for verification purposes
+// as it is not exported from the main label.ts module.
+const TRASH_CATEGORY_ID = Id.from("TRASH_CATEGORY");
+
+Deno.test("Principle: User stages, finalizes, updates, and removes labels on transactions", async () => {
+  const [db, client] = await testDb();
+  const store = new LabelStore(db);
+
+  try {
+    // 1. SETUP: Define user, categories, and a transaction
+    const user = Id.from("user_normal_ops");
+    const catGroceries = Id.from("cat_groceries");
+    const catDining = Id.from("cat_dining");
+    const tx1_id = Id.from("tx_shop_rite");
+    const tx1_name = "Shop Rite";
+    const tx1_merchant = "SHOP RITE #555";
+
+    // --- NEW FLOW: Stage then Finalize ---
+
+    // 2. ACTION: STAGE a label for a new transaction.
+    console.log("Step 1: Staging a new label (Groceries)...");
+    await store.stage(user, tx1_id, tx1_name, tx1_merchant, catGroceries);
+
+    // 3. VERIFY a) No committed label exists yet.
+    let initialLabel = await store.getLabel(tx1_id);
+    assertEquals(
+      initialLabel,
+      null,
+      "No committed label should exist after 'stage'.",
+    );
+
+    // 3. VERIFY b) No transaction info or category history is committed yet.
+    let txInfo = await store.getTxInfo(tx1_id);
+    assertEquals(
+      txInfo,
+      null,
+      "No transaction info should be committed after 'stage'.",
+    );
+    let groceriesHistory = await store.getCategoryHistory(catGroceries);
+    assertEquals(
+      groceriesHistory.length,
+      0,
+      "Groceries history should be empty after 'stage'.",
+    );
+
+    // 4. ACTION: FINALIZE the staged labels for the user.
+    console.log("Step 2: Finalizing staged labels (committing Groceries)...");
+    await store.finalize(user);
+
+    // 5. VERIFY a) The label was created correctly after finalize.
+    initialLabel = await store.getLabel(tx1_id);
+    assertExists(initialLabel, "Label should be created after 'finalize'.");
+    assertEquals(initialLabel.category_id, catGroceries.toString());
+    assertEquals(initialLabel.user_id, user.toString());
+
+    // 5. VERIFY b) The transaction info was saved after finalize.
+    txInfo = await store.getTxInfo(tx1_id);
+    assertExists(txInfo, "Transaction info should be saved after 'finalize'.");
+    assertEquals(txInfo.tx_name, tx1_name);
+    assertEquals(txInfo.tx_merchant, tx1_merchant);
+
+    // 5. VERIFY c) The category history was updated after finalize.
+    groceriesHistory = await store.getCategoryHistory(catGroceries);
+    assertEquals(
+      groceriesHistory.length,
+      1,
+      "Groceries history should contain one transaction after 'finalize'.",
+    );
+    assertEquals(groceriesHistory[0], tx1_id.toString());
+
+    // --- End of NEW FLOW ---
+
+    // 6. ACTION: UPDATE the label.
+    // The user changes their mind and re-labels the transaction.
+    console.log("Step 3: Updating the existing label (to Dining)...");
+    await store.update(user, tx1_id, catDining);
+
+    // 7. VERIFY a) The label's category_id has changed.
+    const updatedLabel = await store.getLabel(tx1_id);
+    assertExists(updatedLabel);
+    assertEquals(
+      updatedLabel.category_id,
+      catDining.toString(),
+      "Label's category should now be Dining.",
+    );
+
+    // 7. VERIFY b) The transaction has been moved in the category history.
+    groceriesHistory = await store.getCategoryHistory(catGroceries);
+    assertEquals(
+      groceriesHistory.length,
+      0,
+      "Transaction should be removed from the old category's history (Groceries).",
+    );
+    let diningHistory = await store.getCategoryHistory(catDining);
+    assertEquals(
+      diningHistory.length,
+      1,
+      "Transaction should be added to the new category's history (Dining).",
+    );
+    assertEquals(diningHistory[0], tx1_id.toString());
+
+    // 8. ACTION: REMOVE the label.
+    // The user decides to remove the label, which moves it to the Trash category.
+    console.log("Step 4: Removing the label (moving to Trash)...");
+    await store.remove(user, tx1_id);
+
+    // 9. VERIFY a) The label's category_id is now the special TRASH_CATEGORY_ID.
+    const removedLabel = await store.getLabel(tx1_id);
+    assertExists(removedLabel);
+    assertEquals(
+      removedLabel.category_id,
+      TRASH_CATEGORY_ID.toString(),
+      "Label's category should now be Trash.",
+    );
+
+    // 9. VERIFY b) The transaction is no longer in its previous category history.
+    diningHistory = await store.getCategoryHistory(catDining);
+    assertEquals(
+      diningHistory.length,
+      0,
+      "Transaction should be removed from the Dining category's history.",
+    );
+    const trashHistory = await store.getCategoryHistory(TRASH_CATEGORY_ID);
+    assertEquals(
+      trashHistory.length,
+      1,
+      "Transaction should be added to the Trash category's history.",
+    );
+    assertEquals(trashHistory[0], tx1_id.toString());
+
+    console.log("\n✅ Test completed successfully.");
+  } finally {
+    await client.close();
+  }
+});
+
+// Adding a new test case for the "requires" condition of stage and finalize.
+Deno.test("Principle: Staging, Finalizing, and Cancelling with conflicts and atomicity", async () => {
+  const [db, client] = await testDb();
+  const store = new LabelStore(db);
+
+  try {
+    const userA = Id.from("user_A_conflict_test");
+    const userB = Id.from("user_B_conflict_test");
+    const catGroceries = Id.from("cat_groceries");
+    const catDining = Id.from("cat_dining");
+    const tx1_id = Id.from("tx_conflict_1");
+    const tx1_name = "Tx 1 Name";
+    const tx1_merchant = "Tx 1 Merchant";
+    const tx2_id = Id.from("tx_conflict_2");
+    const tx2_name = "Tx 2 Name";
+    const tx2_merchant = "Tx 2 Merchant";
+    const tx3_id = Id.from("tx_conflict_3"); // For staging a conflict with already committed
+
+    // --- Test 1: stage rejects if a committed label already exists for tx_id ---
+    console.log("\n--- Testing 'stage' conflict with committed label ---");
+    await store.stage(userA, tx1_id, tx1_name, tx1_merchant, catGroceries);
+    await store.finalize(userA); // tx1_id is now committed by userA
+
+    await assertRejects(
+      async () => {
+        await store.stage(userA, tx1_id, tx1_name, tx1_merchant, catDining);
+      },
+      Error,
+      `A committed label already exists for transaction ${tx1_id.toString()}`,
+      "Should reject staging if a committed label exists for the transaction.",
+    );
+    console.log(
+      "   ✅ 'stage' rejected as expected when committed label exists.",
+    );
+
+    // --- Test 2: stage rejects if a staged label already exists for tx_id (for the same user) ---
+    console.log(
+      "\n--- Testing 'stage' conflict with existing staged label ---",
+    );
+    await store.stage(userA, tx2_id, tx2_name, tx2_merchant, catGroceries);
+    await assertRejects(
+      async () => {
+        await store.stage(userA, tx2_id, tx2_name, tx2_merchant, catDining);
+      },
+      Error,
+      `A staged label already exists for transaction ${tx2_id.toString()} for this user.`,
+      "Should reject staging if a staged label already exists for the same user/transaction.",
+    );
+    await store.cancel(userA); // Clean up staged labels for userA
+    console.log("   ✅ 'stage' rejected as expected when staged label exists.");
+
+    // --- Test 3: finalize rejects if any staged transaction conflicts with an already committed label (all-or-nothing) ---
+    console.log("\n--- Testing 'finalize' batch conflict and atomicity ---");
+    // UserA stages two transactions
+    await store.stage(userA, tx2_id, tx2_name, tx2_merchant, catGroceries); // Now tx2_id is staged by userA
+    await store.stage(userA, tx3_id, tx1_name, tx1_merchant, catDining); // Now tx3_id is staged by userA
+
+    // Simulate tx2_id getting committed by another user (or process) between stage and finalize
+    // This will use userB to commit tx2_id
+    // Note: UserB staging tx2_id is allowed because tx2_id is currently only STAGED by userA, not COMMITTED.
+    await store.stage(userB, tx2_id, tx2_name, tx2_merchant, catGroceries);
+    await store.finalize(userB); // Now tx2_id is COMMITTED by userB. UserB's staged labels are cleared.
+
+    // UserA tries to finalize their batch, which includes tx2_id (now committed by userB) and tx3_id (still staged by userA)
+    await assertRejects(
+      async () => {
+        await store.finalize(userA);
+      },
+      Error,
+      `Cannot finalize: Committed labels already exist for transactions: ${tx2_id.toString()}.`,
+      "Finalize should reject if any staged transaction conflicts with a committed label.",
+    );
+    console.log(
+      "   ✅ 'finalize' rejected as expected when a conflict occurred in the batch.",
+    );
+
+    // Verify atomicity: tx3_id should NOT have been committed
+    const committedTx3 = await store.getLabel(tx3_id);
+    assertEquals(
+      committedTx3,
+      null,
+      "Tx3 should NOT be committed as finalize failed (all-or-nothing).",
+    );
+
+    // Verify tx2_id is committed (by userB)
+    const committedTx2 = await store.getLabel(tx2_id);
+    assertExists(committedTx2, "Tx2 should be committed by userB.");
+    assertEquals(
+      committedTx2.user_id,
+      userB.toString(),
+      "Tx2 committed by userB.",
+    );
+
+    // UserA's staged labels should still be present after failed finalize (only tx3_id left, tx2_id was removed from staged by userB's finalize if it was staged there)
+    // (We can't query staged labels directly via public API, but a subsequent cancel would clear them)
+    await store.cancel(userA); // Clear userA's remaining staged labels
+    console.log(
+      "   ✅ Atomicity confirmed: no other staged labels were committed.",
+    );
+
+    // --- Test 4: User cancels staged labels ---
+    console.log("\n--- Testing 'cancel' action ---");
+    // Stage a few labels for userA
+    const tx4_id = Id.from("tx_to_cancel_4");
+    const tx4_name = "Transaction 4";
+    const tx4_merchant = "Merchant 4";
+    const tx5_id = Id.from("tx_to_cancel_5");
+    const tx5_name = "Transaction 5";
+    const tx5_merchant = "Merchant 5";
+
+    await store.stage(userA, tx4_id, tx4_name, tx4_merchant, catGroceries);
+    await store.stage(userA, tx5_id, tx5_name, tx5_merchant, catDining);
+
+    // Verify no committed labels yet for these staged transactions
+    assertEquals(
+      await store.getLabel(tx4_id),
+      null,
+      "Tx4 should not be committed before cancel.",
+    );
+    assertEquals(
+      await store.getLabel(tx5_id),
+      null,
+      "Tx5 should not be committed before cancel.",
+    );
+
+    console.log("   Staged labels. Now cancelling...");
+    await store.cancel(userA);
+
+    // Verify no committed labels after cancel
+    assertEquals(
+      await store.getLabel(tx4_id),
+      null,
+      "Committed label for tx4 should still be null after cancel.",
+    );
+    assertEquals(
+      await store.getLabel(tx5_id),
+      null,
+      "Committed label for tx5 should still be null after cancel.",
+    );
+
+    // Verify no transaction info (which would be created by finalize)
+    assertEquals(
+      await store.getTxInfo(tx4_id),
+      null,
+      "Tx info for tx4 should still be null after cancel.",
+    );
+    assertEquals(
+      await store.getTxInfo(tx5_id),
+      null,
+      "Tx info for tx5 should still be null after cancel.",
+    );
+
+    // Verify no category history entry (which would be created by finalize)
+    // Using filter to ensure only the specific transaction for this test is checked,
+    // in case other transactions from earlier tests exist in the same category.
+    assertEquals(
+      (await store.getCategoryHistory(catGroceries)).filter((txid) =>
+        txid === tx4_id.toString()
+      ).length,
+      0,
+      "Category history should not contain tx4 after cancel.",
+    );
+    assertEquals(
+      (await store.getCategoryHistory(catDining)).filter((txid) =>
+        txid === tx5_id.toString()
+      ).length,
+      0,
+      "Category history should not contain tx5 after cancel.",
+    );
+
+    // Attempt to finalize - should do nothing as there are no staged labels for userA
+    await store.finalize(userA);
+    assertEquals(
+      await store.getLabel(tx4_id),
+      null,
+      "Finalize after cancel should not commit anything.",
+    );
+    console.log(
+      "   ✅ 'cancel' action confirmed to clear staged labels without committing.",
+    );
+
+    console.log("\n✅ Conflict and Cancel tests completed successfully.");
+  } finally {
+    await client.close();
+  }
+});
+
+```

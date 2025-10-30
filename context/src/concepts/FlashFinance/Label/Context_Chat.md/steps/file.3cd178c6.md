@@ -1,0 +1,78 @@
+---
+timestamp: 'Fri Oct 17 2025 21:02:39 GMT-0400 (Eastern Daylight Time)'
+parent: '[[..\20251017_210239.a7afab31.md]]'
+content_id: 3cd178c6ec07ce774e09485a2d642bdd2dd4efaf9d87317a0ca3db1f869990bc
+---
+
+# file: src/concepts/FlashFinance/Label/test-actions/test-non-popular.ts
+
+```typescript
+import { assertEquals } from "jsr:@std/assert";
+import { testDb } from "@utils/database.ts";
+import { Id, LabelStore } from "../label.ts";
+
+Deno.test("LabelStore: finalize on empty staged labels is a no-op", async () => {
+  const [db, client] = await testDb();
+  const store = new LabelStore(db);
+  const user = Id.from("test-user-no-staging");
+
+  try {
+    // 1. Pre-condition: Ensure there are no staged labels for the user.
+    // This is implicitly handled by starting with a clean DB in testDb(),
+    // but we can also explicitly cancel any lingering staged labels from previous tests.
+    await store.cancel(user);
+
+    // Verify that there are no committed labels for this user and a sample transaction
+    // before calling finalize. This is to ensure that finalize doesn't create any new
+    // committed labels when there are no staged ones.
+    const sampleTxId = Id.from("sample-tx-id");
+    const initialCommittedLabel = await store.getLabel(user, sampleTxId);
+    assertEquals(
+      initialCommittedLabel,
+      null,
+      "Pre-condition: No committed label should exist for the sample transaction.",
+    );
+
+    // 2. ACTION: Call finalize with no staged labels for the user.
+    // This call is expected to be a no-op.
+    await store.finalize(user);
+
+    // 3. VERIFY:
+    // (1) The finalize operation did not throw an error.
+    // (This is implicitly checked if the test reaches this point without throwing).
+
+    // (2) Previously committed labels remain unchanged.
+    // We verify this by checking that the sample transaction's label (which we
+    // asserted to be null earlier) is still null. This confirms that `finalize`
+    // did not erroneously create a label.
+    const postFinalizeCommittedLabel = await store.getLabel(user, sampleTxId);
+    assertEquals(
+      postFinalizeCommittedLabel,
+      null,
+      "No new committed label should be created by finalize when no staged labels exist.",
+    );
+
+    // Additionally, check that no transaction info was created.
+    const txInfo = await store.getTxInfo(user, sampleTxId);
+    assertEquals(
+      txInfo,
+      null,
+      "No transaction info should be created by finalize when no staged labels exist.",
+    );
+
+    // And no category history entry was created.
+    const categoryHistory = await store.getCategoryHistory(
+      user,
+      Id.from("any-category"),
+    );
+    assertEquals(
+      categoryHistory.length,
+      0,
+      "No category history entry should be created by finalize when no staged labels exist.",
+    );
+  } finally {
+    await client.close();
+  }
+});
+
+```

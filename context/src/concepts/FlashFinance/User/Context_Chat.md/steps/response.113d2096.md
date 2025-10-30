@@ -1,0 +1,80 @@
+---
+timestamp: 'Fri Oct 17 2025 22:41:18 GMT-0400 (Eastern Daylight Time)'
+parent: '[[..\20251017_224118.709ccacf.md]]'
+content_id: 113d2096f4b2bd5615c8ac2ff18a2cc13aaa491705905f7d06c452b9e5280879
+---
+
+# response:
+
+```typescript
+// deno-lint-ignore no-unversioned-import
+import { Collection, Db } from "npm:mongodb";
+
+/**
+ * Represents a unique identifier.
+ * This class is copied directly from label.ts as per the "don't interleave but follow structure" instruction,
+ * to ensure consistent ID handling without directly importing a class from another concept's file.
+ */
+export class Id {
+  private constructor(private value: string) {}
+
+  static from(value: string): Id {
+    return new Id(value);
+  }
+
+  toString(): string {
+    return this.value;
+  }
+}
+
+/**
+ * Defines the possible status states for a user.
+ */
+export enum UserStatus {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+}
+
+/**
+ * Represents the structure of a User document stored in MongoDB.
+ *
+ * @property _id - The unique identifier for the user, corresponding to `user_id`.
+ * @property email - The user's email address.
+ * @property name - The user's display name.
+ * @property password_hash - The hashed password for the user.
+ * @property status - The current status of the user account.
+ */
+type UserDoc = {
+  _id: string; // Corresponds to user_id, used as primary key in MongoDB
+  email: string;
+  name: string;
+  password_hash: string;
+  status: UserStatus;
+};
+
+const PREFIX = "User" + "."; // Prefix for MongoDB collection names, following label.ts pattern
+
+/**
+ * Manages the state and persistence of User concepts in the database.
+ * This class is kept minimal, focusing only on defining the structure of the user data
+ * and its interaction with MongoDB collections, without implementing any actions.
+ */
+export class UserStore {
+  // The MongoDB collection for storing User documents
+  private users: Collection<UserDoc>;
+
+  /**
+   * Constructs a new UserStore instance.
+   *
+   * @param db The MongoDB database instance to connect to.
+   */
+  constructor(private readonly db: Db) {
+    // Initialize the 'users' collection with the defined prefix.
+    // This mirrors the collection initialization pattern seen in label.ts.
+    this.users = db.collection(PREFIX + "users");
+  }
+
+  // No actions are implemented as per the prompt's instruction.
+  // This class only sets up the necessary state (UserDoc type and collection reference).
+}
+```

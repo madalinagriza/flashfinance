@@ -1,0 +1,121 @@
+---
+timestamp: 'Fri Oct 17 2025 18:18:28 GMT-0400 (Eastern Daylight Time)'
+parent: '[[..\20251017_181828.690e48ed.md]]'
+content_id: 14f2cda3c69afe012c0148573aaacb8ddf2f9b1b02535993e1f9b7fea40c8c83
+---
+
+# file: src/concepts/FlashFinance/Label/test-actions/test-op-simple.ts
+
+```typescript
+import { assertEquals, assertExists } from "jsr:@std/assert";
+import { testDb } from "@utils/database.ts";
+import { Id, LabelStore } from "../label.ts";
+
+// The built-in Trash category ID, defined here for verification purposes
+// as it is not exported from the main label.ts module.
+const TRASH_CATEGORY_ID = Id.from("TRASH_CATEGORY");
+
+Deno.test("Principle: User applies, updates, and removes labels on transactions", async () => {
+  const [db, client] = await testDb();
+  const store = new LabelStore(db);
+
+  try {
+    // 1. SETUP: Define user, categories, and a transaction
+    const user = Id.from("user_normal_ops");
+    const catGroceries = Id.from("cat_groceries");
+    const catDining = Id.from("cat_dining");
+    const tx1_id = Id.from("tx_shop_rite");
+    const tx1_name = "Shop Rite";
+    const tx1_merchant = "SHOP RITE #555";
+
+    // 2. ACTION: APPLY a label to a new transaction.
+    // This is the first time the user is categorizing this transaction.
+    console.log("Step 1: Applying a new label (Groceries)...");
+    await store.apply(user, tx1_id, tx1_name, tx1_merchant, catGroceries);
+
+    // 3. VERIFY a) The label was created correctly.
+    const initialLabel = await store.getLabel(tx1_id);
+    assertExists(initialLabel, "Label should be created after 'apply'.");
+    assertEquals(initialLabel.category_id, catGroceries.toString());
+    assertEquals(initialLabel.user_id, user.toString());
+
+    // 3. VERIFY b) The transaction info was saved.
+    const txInfo = await store.getTxInfo(tx1_id);
+    assertExists(txInfo, "Transaction info should be saved after 'apply'.");
+    assertEquals(txInfo.tx_name, tx1_name);
+    assertEquals(txInfo.tx_merchant, tx1_merchant);
+
+    // 3. VERIFY c) The category history was updated.
+    let groceriesHistory = await store.getCategoryHistory(catGroceries);
+    assertEquals(
+      groceriesHistory.length,
+      1,
+      "Groceries history should contain one transaction.",
+    );
+    assertEquals(groceriesHistory[0], tx1_id.toString());
+
+    // 4. ACTION: UPDATE the label.
+    // The user changes their mind and re-labels the transaction.
+    console.log("Step 2: Updating the existing label (to Dining)...");
+    await store.update(user, tx1_id, catDining);
+
+    // 5. VERIFY a) The label's category_id has changed.
+    const updatedLabel = await store.getLabel(tx1_id);
+    assertExists(updatedLabel);
+    assertEquals(
+      updatedLabel.category_id,
+      catDining.toString(),
+      "Label's category should now be Dining.",
+    );
+
+    // 5. VERIFY b) The transaction has been moved in the category history.
+    groceriesHistory = await store.getCategoryHistory(catGroceries);
+    assertEquals(
+      groceriesHistory.length,
+      0,
+      "Transaction should be removed from the old category's history (Groceries).",
+    );
+    let diningHistory = await store.getCategoryHistory(catDining);
+    assertEquals(
+      diningHistory.length,
+      1,
+      "Transaction should be added to the new category's history (Dining).",
+    );
+    assertEquals(diningHistory[0], tx1_id.toString());
+
+    // 6. ACTION: REMOVE the label.
+    // The user decides to remove the label, which moves it to the Trash category.
+    console.log("Step 3: Removing the label (moving to Trash)...");
+    await store.remove(user, tx1_id);
+
+    // 7. VERIFY a) The label's category_id is now the special TRASH_CATEGORY_ID.
+    const removedLabel = await store.getLabel(tx1_id);
+    assertExists(removedLabel);
+    assertEquals(
+      removedLabel.category_id,
+      TRASH_CATEGORY_ID.toString(),
+      "Label's category should now be Trash.",
+    );
+
+    // 7. VERIFY b) The transaction is no longer in its previous category history.
+    diningHistory = await store.getCategoryHistory(catDining);
+    assertEquals(
+      diningHistory.length,
+      0,
+      "Transaction should be removed from the Dining category's history.",
+    );
+    const trashHistory = await store.getCategoryHistory(TRASH_CATEGORY_ID);
+    assertEquals(
+      trashHistory.length,
+      1,
+      "Transaction should be added to the Trash category's history.",
+    );
+    assertEquals(trashHistory[0], tx1_id.toString());
+
+    console.log("\n✅ Test completed successfully.");
+  } finally {
+    await client.close();
+  }
+});
+
+```

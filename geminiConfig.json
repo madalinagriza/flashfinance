@@ -1,4 +1,9 @@
 {
+    "generationConfig": {
+    
+        "maxOutputTokens": 1000
+    },
+    
     "thinkingConfig": {
         "includeThoughts": true
     }
