@@ -1,5 +1,22 @@
-import { Collection, Db } from "mongodb";
-import { Id } from "../../utils/Id.ts";
+// deno-lint-ignore no-unversioned-import
+import { Collection, Db } from "npm:mongodb";
+
+/**
+ * Represents a unique identifier.
+ * This class is copied directly from LabelConcept.ts as per the "don't interleave but follow structure" instruction,
+ * to ensure consistent ID handling without directly importing a class from another concept's file.
+ */
+export class Id {
+  private constructor(private value: string) {}
+
+  static from(value: string): Id {
+    return new Id(value);
+  }
+
+  toString(): string {
+    return this.value;
+  }
+}
 
 /**
  * Defines the possible status states for a user.
@@ -212,6 +229,23 @@ export default class UserConcept {
 
     // effects: sets the user's status to INACTIVE
     // (This is implicitly handled by the updateOne call if matchedCount > 0)
+  }
+  /**
+   * Returns true if the user with the given user_id is ACTIVE, false otherwise.
+   */
+  async is_active(email: string, password: string): Promise<boolean>;
+  async is_active(
+    payload: { email: string; password: string },
+  ): Promise<boolean>;
+  async is_active(
+    a: string | { email: unknown; password: unknown },
+    b?: string,
+  ): Promise<boolean> {
+    // narrow both styles
+    const email = typeof a === "object" ? String(a.email) : a;
+    const password = typeof a === "object" ? String(a.password) : String(b);
+    const user = await this.authenticate(email, password);
+    return user.status === UserStatus.ACTIVE;
   }
 
   async changePassword(

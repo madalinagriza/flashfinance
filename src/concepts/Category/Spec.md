@@ -46,6 +46,10 @@ removes the category and its associated metrics; returns true
 >> *requires:* owner and category exist; transaction with tx_id is recorded for this category
 >> *effects:* removes the transaction record from the metric for (owner, category); returns true
 
+> moveTransactionToTrash(owner_id: ID, from_category_id: ID, tx_id: ID): (ok: Boolean)
+>> *requires:* owner and source category exist; transaction with tx_id is recorded for the source category
+>> *effects:* removes the transaction record from the source category, ensures the built-in Trash category exists for the owner, and records the transaction (same amount/date) under Trash; returns true
+
 
 **invariants:**
 - (owner_id, name) is unique among Categories

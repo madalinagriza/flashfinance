@@ -172,6 +172,39 @@
 }
 ```
 ---
+### POST /api/Category/moveTransactionToTrash
+
+**Description:** Moves a recorded transaction from one category into the built-in Trash bucket.
+
+**Requirements:**
+- owner and source category exist; transaction with tx_id is recorded for the source category
+
+**Effects:**
+- removes the transaction record from the source category, ensures the owner's Trash category exists, and records the transaction (same amount/date) under Trash; returns true
+
+**Request Body:**
+```json
+{
+  "owner_id": "string",
+  "from_category_id": "string",
+  "tx_id": "string"
+}
+```
+
+**Success Response Body (Action):**
+```json
+{
+  "ok": "boolean"
+}
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
 ### POST /api/Category/getCategoryNameById
 
 **Description:** Retrieves the name of a single category by its ID.

@@ -29,24 +29,6 @@ async function main() {
   // --- Dynamic Concept Loading and Routing ---
   console.log(`Scanning for concepts in ./${CONCEPTS_DIR}...`);
 
-  // Manually instantiate concepts to handle dependencies
-  const concepts: { [key: string]: any } = {};
-  const labelModule = await import(
-    toFileUrl(
-      Deno.realPathSync(`${CONCEPTS_DIR}/Label/LabelConcept.ts`),
-    ).href
-  );
-  const labelConcept = new labelModule.default(db);
-  concepts["Label"] = labelConcept;
-
-  const categoryModule = await import(
-    toFileUrl(
-      Deno.realPathSync(`${CONCEPTS_DIR}/Category/CategoryConcept.ts`),
-    ).href
-  );
-  const categoryConcept = new categoryModule.default(db, labelConcept);
-  concepts["Category"] = categoryConcept;
-
   for await (
     const entry of walk(CONCEPTS_DIR, {
       maxDepth: 1,
@@ -57,11 +39,6 @@ async function main() {
     if (entry.path === CONCEPTS_DIR) continue; // Skip the root directory
 
     const conceptName = entry.name;
-    if (concepts[conceptName]) {
-      // Already loaded
-      continue;
-    }
-
     const conceptFilePath = `${entry.path}/${conceptName}Concept.ts`;
 
     try {
@@ -80,44 +57,39 @@ async function main() {
       }
 
       const instance = new ConceptClass(db);
-      concepts[conceptName] = instance;
+      const conceptApiName = conceptName;
+      console.log(
+        `- Registering concept: ${conceptName} at ${BASE_URL}/${conceptApiName}`,
+      );
+
+      const methodNames = Object.getOwnPropertyNames(
+        Object.getPrototypeOf(instance),
+      )
+        .filter((name) =>
+          name !== "constructor" && typeof instance[name] === "function"
+        );
+
+      for (const methodName of methodNames) {
+        const actionName = methodName;
+        const route = `${BASE_URL}/${conceptApiName}/${actionName}`;
+
+        app.post(route, async (c) => {
+          try {
+            const body = await c.req.json().catch(() => ({})); // Handle empty body
+            const result = await instance[methodName](body);
+            return c.json(result);
+          } catch (e) {
+            console.error(`Error in ${conceptName}.${methodName}:`, e);
+            return c.json({ error: "An internal server error occurred." }, 500);
+          }
+        });
+        console.log(`  - Endpoint: POST ${route}`);
+      }
     } catch (e) {
       console.error(
         `! Error loading concept from ${conceptFilePath}:`,
         e,
       );
-    }
-  }
-
-  for (const conceptName in concepts) {
-    const instance = concepts[conceptName];
-    const conceptApiName = conceptName;
-    console.log(
-      `- Registering concept: ${conceptName} at ${BASE_URL}/${conceptApiName}`,
-    );
-
-    const methodNames = Object.getOwnPropertyNames(
-      Object.getPrototypeOf(instance),
-    )
-      .filter((name) =>
-        name !== "constructor" && typeof instance[name] === "function"
-      );
-
-    for (const methodName of methodNames) {
-      const actionName = methodName;
-      const route = `${BASE_URL}/${conceptApiName}/${actionName}`;
-
-      app.post(route, async (c) => {
-        try {
-          const body = await c.req.json().catch(() => ({})); // Handle empty body
-          const result = await instance[methodName](body);
-          return c.json(result);
-        } catch (e) {
-          console.error(`Error in ${conceptName}.${methodName}:`, e);
-          return c.json({ error: "An internal server error occurred." }, 500);
-        }
-      });
-      console.log(`  - Endpoint: POST ${route}`);
     }
   }
 

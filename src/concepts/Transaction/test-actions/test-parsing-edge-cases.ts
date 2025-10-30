@@ -1,9 +1,4 @@
-import {
-  assertEquals,
-  assertExists,
-  assertInstanceOf,
-  assertRejects,
-} from "jsr:@std/assert";
+import { assertEquals, assertRejects } from "jsr:@std/assert";
 import { Db, MongoClient } from "npm:mongodb";
 import TransactionConcept, {
   Id,
@@ -121,9 +116,9 @@ Deno.test("TransactionConcept: import_transactions skips CSV rows with only infl
   try {
     const csvContent = `Date,Description,Debit,Credit,Type
 2024-01-01,Deposit,,100.00,CR
-2024-01-02,Refund from Amazon,-50.00,,DR
+2024-01-02,Refund from Amazon,,50.00,CR
 2024-01-03,Salary Deposit,,2500.00,CR
-2024-01-04,Generic Inflow Amount,-75.00,,
+2024-01-04,Generic Inflow Amount,,75.00,
 `;
     await createTempCsvFile(tempFilePath, csvContent);
 
@@ -155,7 +150,7 @@ Deno.test("TransactionConcept: import_transactions skips CSV rows with only infl
   }
 });
 
-Deno.test("TransactionConcept: import_transactions skips transactions with zero or negative outflow amounts", async () => {
+Deno.test("TransactionConcept: import_transactions skips zero amounts and normalizes negative debits", async () => {
   let db: Db | null = null;
   let client: MongoClient | null = null;
   const tempFilePath = ZERO_NEGATIVE_AMOUNTS_CSV_PATH;
@@ -184,11 +179,17 @@ Deno.test("TransactionConcept: import_transactions skips transactions with zero 
 
     assertEquals(
       allStoredTransactions.length,
-      0,
-      "Database should be empty after importing zero/negative amounts CSV.",
+      1,
+      "Only the negative debit should be imported as a normalized outflow.",
+    );
+    const normalizedTx = allStoredTransactions[0];
+    assertEquals(
+      normalizedTx.amount,
+      15,
+      "Negative debit should be stored as a positive amount.",
     );
     console.log(
-      "   ✅ Verified: Transactions with zero or negative amounts were skipped.",
+      "   ✅ Verified: Zero amounts were skipped and negative debit normalized to a positive outflow.",
     );
   } finally {
     if (client) await client.close(true);
@@ -372,8 +373,8 @@ Deno.test("TransactionConcept: import_transactions rejects falsy owner_id", asyn
     // Test with null owner_id
     await assertRejects(
       async () => {
-        // Type casting to 'any' to allow testing runtime validation for falsy values
-        await store.import_transactions(null as any, csvContent);
+        // Cast through unknown to bypass static type checks while exercising runtime validation.
+        await store.import_transactions(null as unknown as Id, csvContent);
       },
       Error,
       "Owner ID is required for importing transactions.",
@@ -384,7 +385,7 @@ Deno.test("TransactionConcept: import_transactions rejects falsy owner_id", asyn
     // Test with undefined owner_id
     await assertRejects(
       async () => {
-        await store.import_transactions(undefined as any, csvContent);
+        await store.import_transactions(undefined as unknown as Id, csvContent);
       },
       Error,
       "Owner ID is required for importing transactions.",

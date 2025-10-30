@@ -358,14 +358,9 @@ export default class TransactionConcept {
         if (!isNaN(parsedValue)) {
           if (isExplicitOutflow === true) {
             // Identified as debit/outflow source. Keep if positive.
-            if (parsedValue > 0) {
-              amount = parsedValue;
-            } else {
-              // Negative value in a debit column is effectively an inflow (reversal). Skip.
-              console.log(
-                `Skipping negative value (${parsedValue}) from debit-identified column (assumed inflow).`,
-              );
-              amount = null;
+            const normalized = Math.abs(parsedValue);
+            if (normalized > 0) {
+              amount = normalized;
             }
           } else if (isExplicitOutflow === false) {
             // Identified as credit/inflow source. Always skip for "outflow only" requirement.
@@ -376,11 +371,11 @@ export default class TransactionConcept {
           } else {
             // Generic 'Amount' column, no explicit debit/credit column or type
             // Assume positive value is outflow, negative value is inflow.
-            if (parsedValue > 0) {
-              amount = parsedValue;
-            } else {
+            if (parsedValue < 0) {
+              amount = Math.abs(parsedValue);
+            } else if (parsedValue > 0) {
               console.log(
-                `Skipping negative value (${parsedValue}) from generic amount column (assumed inflow).`,
+                `Skipping positive value (${parsedValue}) from generic amount column (assumed deposit).`,
               );
               amount = null;
             }

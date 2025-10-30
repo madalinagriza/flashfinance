@@ -45,7 +45,7 @@ Deno.test("TransactionConcept: CSV import parses and stores outflow transactions
     console.log("import_transactions completed.");
 
     // 3. Verification: Check the number of imported transactions
-    // Based on sample-spendings.csv and the parsing logic (only positive outflows):
+    // Based on sample-spendings.csv and the parsing logic (positive debits + normalized negatives):
     // 1. "Starbucks Inc." 4.25 DR -> Outflow
     // 2. "Payroll Deposit" 2500 CR -> Inflow (skipped)
     // 3. "Whole Foods Market" 52.3 DR -> Outflow
@@ -53,10 +53,10 @@ Deno.test("TransactionConcept: CSV import parses and stores outflow transactions
     // 5. "Electric Company Payment" 150 DR -> Outflow
     // 6. "ATM Withdrawal" 60 DR -> Outflow
     // 7. "Salary Deposit" 2400 CR -> Inflow (skipped)
-    // 8. "Gym Membership" -35 DR -> Negative debit (skipped as it's an inflow reversal)
+    // 8. "Gym Membership" -35 DR -> Negative debit normalized to 35 outflow
     // 9. "Netflix Subscription" 15.99 DR -> Outflow
     // 10. "Credit Card Payment" 350 CR -> Inflow (skipped)
-    const expectedNumberOfOutflows = 5;
+    const expectedNumberOfOutflows = 6;
     // Verify by reading back from the DB using list_all()
     const allStoredTransactions = await store.list_all();
     assertEquals(
@@ -89,6 +89,11 @@ Deno.test("TransactionConcept: CSV import parses and stores outflow transactions
         date: new Date("2025-01-08T00:00:00.000Z"),
         merchant_text: "ATM Withdrawal",
         amount: 60,
+      },
+      {
+        date: new Date("2025-01-10T00:00:00.000Z"),
+        merchant_text: "Gym Membership",
+        amount: 35,
       },
       {
         date: new Date("2025-01-11T00:00:00.000Z"),
@@ -208,16 +213,18 @@ Deno.test("TransactionConcept: mark_labeled action behaves correctly", async () 
     console.log("Calling import_transactions...");
     await store.import_transactions(ownerId, csvContent);
     const importedTransactions = await store.list_all();
-    // Based on bank_statement_columns.csv and the parsing logic (only positive outflows):
-    // 1. "Online Transfer To Savings" CR 200 -> Inflow (skipped)
-    // 2. "ATM Withdrawal" DR 50 -> Outflow (imported)
-    // 3. "Groceries - SuperMart" DR 75.50 -> Outflow (imported)
-    // 4. "Salary Deposit" CR 1500 -> Inflow (skipped)
-    // 5. "Coffee Shop" DR 12 -> Outflow (imported)
-    // 6. "Utility Bill Payment" DR 120 -> Outflow (imported)
-    // 7. "Refund - Online Store" DR -25 -> Negative debit (inflow reversal, skipped)
-    // 8. "Gym Membership" DR 40 -> Outflow (imported)
-    const expectedNumberOfOutflows = 5;
+    // Based on sample-spendings.csv and the parsing logic (positive debits + normalized negatives):
+    // 1. "Starbucks Inc." 4.25 DR -> Outflow (imported)
+    // 2. "Payroll Deposit" 2500 CR -> Inflow (skipped)
+    // 3. "Whole Foods Market" 52.3 DR -> Outflow (imported)
+    // 4. "Refund from Amazon" -12.5 CR -> Inflow (skipped)
+    // 5. "Electric Company Payment" 150 DR -> Outflow (imported)
+    // 6. "ATM Withdrawal" 60 DR -> Outflow (imported)
+    // 7. "Salary Deposit" 2400 CR -> Inflow (skipped)
+    // 8. "Gym Membership" -35 DR -> Negative debit normalized to 35 outflow (imported)
+    // 9. "Netflix Subscription" 15.99 DR -> Outflow (imported)
+    // 10. "Credit Card Payment" 350 CR -> Inflow (skipped)
+    const expectedNumberOfOutflows = 6;
     assertEquals(
       importedTransactions.length,
       expectedNumberOfOutflows,
@@ -225,6 +232,20 @@ Deno.test("TransactionConcept: mark_labeled action behaves correctly", async () 
     );
     console.log(
       `   ✅ Imported ${importedTransactions.length} transactions successfully.`,
+    );
+
+    // Confirm the previously negative debit is stored as a positive outflow.
+    const gymMembershipTx = importedTransactions.find((tx) =>
+      tx.merchant_text === "Gym Membership"
+    );
+    assertExists(
+      gymMembershipTx,
+      "Gym Membership transaction should be present after import.",
+    );
+    assertEquals(
+      gymMembershipTx.amount,
+      35,
+      "Negative debit should be normalized to a positive outflow amount.",
     );
 
     // Verify all imported transactions are UNLABELED initially
@@ -341,7 +362,10 @@ Deno.test("TransactionConcept: mark_labeled action behaves correctly", async () 
       "   ✅ Verified: Cannot mark a transaction owned by another user.",
     );
     // Verify its status is still UNLABELED after the failed attempt
-    const fetchedTxWrongOwner = await store.getTransaction(ownerId, txIdWrongOwner);
+    const fetchedTxWrongOwner = await store.getTransaction(
+      ownerId,
+      txIdWrongOwner,
+    );
     assertExists(fetchedTxWrongOwner);
     assertEquals(
       fetchedTxWrongOwner.status,
@@ -393,16 +417,16 @@ Deno.test("TransactionConcept: retrieve labeled and unlabeled transactions corre
     );
 
     // Prepare CSV content for ownerId1
-    const csvContentOwner1 = `Date,Description,Amount
-2024-01-01,Groceries,50.00
-2024-01-02,Coffee,5.50
-2024-01-03,Gas Station,40.00
-2024-01-04,Books,25.00`;
+    const csvContentOwner1 = `Date,Description,Amount,Type
+2024-01-01,Groceries,50.00,DR
+2024-01-02,Coffee,5.50,DR
+2024-01-03,Gas Station,40.00,DR
+2024-01-04,Books,25.00,DR`;
 
     // Prepare CSV content for ownerId2
-    const csvContentOwner2 = `Date,Description,Amount
-2024-01-05,Restaurant,75.00
-2024-01-06,Online Shopping,30.00`;
+    const csvContentOwner2 = `Date,Description,Amount,Type
+2024-01-05,Restaurant,75.00,DR
+2024-01-06,Online Shopping,30.00,DR`;
 
     // Import transactions for ownerId1
     await store.import_transactions(ownerId1, csvContentOwner1);
@@ -427,8 +451,10 @@ Deno.test("TransactionConcept: retrieve labeled and unlabeled transactions corre
     allTxOwner2.sort((a, b) => a.merchant_text.localeCompare(b.merchant_text));
 
     // Mark some transactions as labeled for ownerId1
-    const booksTx = allTxOwner1.find(t => t.merchant_text === "Books")!;
-    const groceriesTx = allTxOwner1.find(t => t.merchant_text === "Groceries")!;
+    const booksTx = allTxOwner1.find((t) => t.merchant_text === "Books")!;
+    const groceriesTx = allTxOwner1.find((t) =>
+      t.merchant_text === "Groceries"
+    )!;
     await store.mark_labeled(Id.from(booksTx.tx_id), ownerId1);
     await store.mark_labeled(Id.from(groceriesTx.tx_id), ownerId1);
 
