@@ -5,7 +5,6 @@
         "mongodb": "npm:mongodb@6.20.0",
         "@google/generative-ai": "npm:@google/generative-ai@0.24.1",
         "csv-parse/sync": "npm:csv-parse@5.6.0/sync",
-
         "@std/assert": "jsr:@std/assert@1",
         "@std/fs": "jsr:@std/fs@1",
         "@std/cli/parse-args": "jsr:@std/cli@1/parse-args",
@@ -26,8 +25,4 @@
         "concepts": "deno run --allow-net --allow-read --allow-sys --allow-env src/concept_server.ts --port 8000 --baseUrl /api"
     }
 
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> from_fork

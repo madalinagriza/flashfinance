@@ -42,6 +42,7 @@ export class Period {
 }
 
 const PREFIX = "Category" + "."; // Using "Category" as prefix as per the concept
+const TRASH_CATEGORY_ID = Id.from("TRASH_CATEGORY");
 
 /**
  * Represents a Category record as stored in MongoDB.
@@ -60,18 +61,24 @@ type CategoryDoc = {
 
 /**
  * Represents a CategoryMetric record as stored in MongoDB.
- * The _id field uniquely identifies a metric for a given category and period for a user.
+ * The _id field uniquely identifies the metric bucket for a user + category.
  * Invariants:
- * - (owner_id, category_id, period) uniquely identifies a CategoryMetric
- * - CategoryMetric.current_total is nonnegative
+ * - (owner_id, category_id) uniquely identifies a CategoryMetricDoc
+ * - Each transaction entry is unique by tx_id within the document
+ * - Transaction amounts are nonnegative
  */
+type CategoryMetricEntry = {
+  tx_id: string;
+  amount: number;
+  tx_date: Date;
+};
+
 type CategoryMetricDoc = {
-  _id: string; // Composite key: `${owner_id.toString()}:${category_id.toString()}:${period.toString()}`
+  _id: string; // Composite key: `${owner_id.toString()}:${category_id.toString()}`
   owner_id: string;
   category_id: string;
-  period_start: Date; // Storing the start date of the period
-  period_end: Date; // Storing the end date of the period
-  current_total: number;
+  transactions: CategoryMetricEntry[];
+  updated_at: Date;
 };
 
 export default class CategoryConcept {
@@ -105,14 +112,14 @@ export default class CategoryConcept {
 
   async create(owner_id: Id, name: string): Promise<{ category_id: Id }>;
   async create(
-    payload: { owner_id: Id; name: string },
+    payload: { owner_id: string; name: string },
   ): Promise<{ category_id: Id }>;
   async create(
-    a: Id | { owner_id: Id; name: unknown },
+    a: Id | { owner_id: string; name: unknown },
     b?: string,
   ): Promise<{ category_id: Id }> {
     // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
+    const owner_id = a instanceof Id ? a : Id.from(String(a.owner_id));
     const name = a instanceof Id ? String(b) : String(a.name);
 
     // 1. Check for existing category with the same name for the owner
@@ -172,18 +179,18 @@ export default class CategoryConcept {
     new_name: string,
   ): Promise<{ category_id: Id }>;
   async rename(payload: {
-    owner_id: Id;
-    category_id: Id;
+    owner_id: string;
+    category_id: string;
     new_name: string;
   }): Promise<{ category_id: Id }>;
   async rename(
-    a: Id | { owner_id: Id; category_id: Id; new_name: unknown },
+    a: Id | { owner_id: string; category_id: string; new_name: unknown },
     b?: Id,
     c?: string,
   ): Promise<{ category_id: Id }> {
     // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
-    const category_id = a instanceof Id ? b! : a.category_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
     const new_name = a instanceof Id ? String(c) : String(a.new_name);
 
     // 1. Requires: category exists and category.owner_id = owner_id
@@ -260,16 +267,16 @@ export default class CategoryConcept {
    */
   async getCategoryNameById(owner_id: Id, category_id: Id): Promise<string>;
   async getCategoryNameById(payload: {
-    owner_id: Id;
-    category_id: Id;
+    owner_id: string;
+    category_id: string;
   }): Promise<string>;
   async getCategoryNameById(
-    a: Id | { owner_id: Id; category_id: Id },
+    a: Id | { owner_id: string; category_id: string },
     b?: Id,
   ): Promise<string> {
     // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
-    const category_id = a instanceof Id ? b! : a.category_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
 
     const doc = await this.getCategoryById(owner_id, category_id);
     if (!doc) {
@@ -280,68 +287,366 @@ export default class CategoryConcept {
     return doc.name;
   }
 
-  async setMetricTotal(
+  async getCategoriesFromOwner(owner_id: Id): Promise<Id[]>;
+  async getCategoriesFromOwner(payload: { owner_id: string }): Promise<Id[]>;
+  async getCategoriesFromOwner(
+    a: Id | { owner_id: string },
+  ): Promise<Id[]> {
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const docs = await this.categories.find({
+      owner_id: owner_id.toString(),
+    })
+      .project({ category_id: 1, _id: 0 })
+      .toArray();
+
+    return docs.map((doc) => Id.from(doc.category_id));
+  }
+
+  private async ensureMetricDocument(
     owner_id: Id,
     category_id: Id,
-    period: Period,
-    total: number,
-  ): Promise<{ ok: boolean }>;
-  async setMetricTotal(payload: {
-    owner_id: Id;
-    category_id: Id;
-    period: Period;
-    total: number;
-  }): Promise<{ ok: boolean }>;
-  async setMetricTotal(
-    a: Id | { owner_id: Id; category_id: Id; period: Period; total: unknown },
-    b?: Id,
-    c?: Period,
-    d?: number,
-  ): Promise<{ ok: boolean }> {
-    // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
-    const category_id = a instanceof Id ? b! : a.category_id;
-    const period = a instanceof Id ? c! : a.period;
-    const total = a instanceof Id ? Number(d) : Number(a.total);
-
-    // 1. Validate total
-    if (total < 0) {
-      throw new Error("Metric update failed: total must be nonnegative.");
+  ): Promise<CategoryMetricDoc> {
+    const metricKey = `${owner_id.toString()}:${category_id.toString()}`;
+    const existing = await this.categoryMetrics.findOne({ _id: metricKey });
+    if (existing) {
+      return existing;
     }
 
-    // 2. The Period constructor already performs validation (start date cannot be after end date).
-    // If `period` is an instance of `Period`, its internal validation covers this.
-    // If an invalid Period object was passed in, its constructor would have thrown.
-
-    // 3. Requires: category exists
-    const existingCategory = await this.getCategoryById(owner_id, category_id);
-    if (!existingCategory) {
-      throw new Error("Metric update failed: Category not found.");
-    }
-
-    // 4. Upsert CategoryMetric
-    const metric_id = this.makeCategoryMetricKey(
-      owner_id,
-      category_id,
-      period,
-    );
-
-    const updateDoc: CategoryMetricDoc = {
-      _id: metric_id,
+    const newDoc: CategoryMetricDoc = {
+      _id: metricKey,
       owner_id: owner_id.toString(),
       category_id: category_id.toString(),
-      period_start: period.startDate,
-      period_end: period.endDate,
-      current_total: total,
+      transactions: [],
+      updated_at: new Date(),
+    };
+
+    try {
+      await this.categoryMetrics.insertOne(newDoc);
+      return newDoc;
+    } catch (error) {
+      const fallback = await this.categoryMetrics.findOne({ _id: metricKey });
+      if (fallback) {
+        return fallback;
+      }
+      throw error;
+    }
+  }
+
+  async addTransaction(
+    owner_id: Id,
+    category_id: Id,
+    tx_id: Id,
+    amount: number,
+    tx_date: Date,
+  ): Promise<{ ok: boolean }>;
+  async addTransaction(payload: {
+    owner_id: string;
+    category_id: string;
+    tx_id: string;
+    amount: number;
+    tx_date: string | Date;
+  }): Promise<{ ok: boolean }>;
+  async addTransaction(
+    a:
+      | Id
+      | {
+        owner_id: string;
+        category_id: string;
+        tx_id: string;
+        amount: number;
+        tx_date: string | Date;
+      },
+    b?: Id,
+    c?: Id,
+    d?: number,
+    e?: Date,
+  ): Promise<{ ok: boolean }> {
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
+    const tx_id = a instanceof Id ? c! : Id.from(a.tx_id);
+    const amount = a instanceof Id ? Number(d) : Number(a.amount);
+    const rawDate = a instanceof Id ? e : a.tx_date;
+
+    if (!Number.isFinite(amount) || amount < 0) {
+      throw new Error(
+        "Transaction amount must be a nonnegative finite number.",
+      );
+    }
+
+    if (!rawDate) {
+      throw new Error("Transaction date is required.");
+    }
+
+    const txDate = rawDate instanceof Date ? rawDate : new Date(rawDate);
+    if (Number.isNaN(txDate.getTime())) {
+      throw new Error("Invalid transaction date provided.");
+    }
+
+    const existingCategory = await this.getCategoryById(owner_id, category_id);
+    if (!existingCategory) {
+      throw new Error("Cannot record metric: category not found.");
+    }
+
+    const metricDoc = await this.ensureMetricDocument(owner_id, category_id);
+    const txIdStr = tx_id.toString();
+
+    if (metricDoc.transactions.some((entry) => entry.tx_id === txIdStr)) {
+      throw new Error(
+        `Transaction ${txIdStr} is already recorded for category ${category_id.toString()}.`,
+      );
+    }
+
+    const entry: CategoryMetricEntry = {
+      tx_id: txIdStr,
+      amount,
+      tx_date: txDate,
     };
 
     await this.categoryMetrics.updateOne(
-      { _id: metric_id },
-      { $set: updateDoc },
-      { upsert: true }, // Create the document if it doesn't exist, otherwise update.
+      { _id: metricDoc._id },
+      {
+        $push: { transactions: entry },
+        $set: { updated_at: new Date() },
+      },
     );
 
     return { ok: true };
+  }
+
+  async removeTransaction(
+    owner_id: Id,
+    category_id: Id,
+    tx_id: Id,
+  ): Promise<{ ok: boolean }>;
+  async removeTransaction(payload: {
+    owner_id: string;
+    category_id: string;
+    tx_id: string;
+  }): Promise<{ ok: boolean }>;
+  async removeTransaction(
+    a: Id | { owner_id: string; category_id: string; tx_id: string },
+    b?: Id,
+    c?: Id,
+  ): Promise<{ ok: boolean }> {
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
+    const tx_id = a instanceof Id ? c! : Id.from(a.tx_id);
+
+    const metricKey = `${owner_id.toString()}:${category_id.toString()}`;
+    const metricDoc = await this.categoryMetrics.findOne({ _id: metricKey });
+    if (!metricDoc) {
+      throw new Error("Metric bucket not found for removal.");
+    }
+
+    const txIdStr = tx_id.toString();
+    const filtered = metricDoc.transactions.filter((entry) =>
+      entry.tx_id !== txIdStr
+    );
+
+    if (filtered.length === metricDoc.transactions.length) {
+      throw new Error(
+        `Transaction ${txIdStr} is not recorded for category ${category_id.toString()}.`,
+      );
+    }
+
+    await this.categoryMetrics.updateOne(
+      { _id: metricKey },
+      {
+        $set: {
+          transactions: filtered,
+          updated_at: new Date(),
+        },
+      },
+    );
+
+    return { ok: true };
+  }
+
+  async moveTransactionToTrash(
+    owner_id: Id,
+    from_category_id: Id,
+    tx_id: Id,
+  ): Promise<{ ok: boolean }>;
+  async moveTransactionToTrash(payload: {
+    owner_id: string;
+    from_category_id: string;
+    tx_id: string;
+  }): Promise<{ ok: boolean }>;
+  async moveTransactionToTrash(
+    a: Id | { owner_id: string; from_category_id: string; tx_id: string },
+    b?: Id,
+    c?: Id,
+  ): Promise<{ ok: boolean }> {
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const from_category_id = a instanceof Id ? b! : Id.from(a.from_category_id);
+    const tx_id = a instanceof Id ? c! : Id.from(a.tx_id);
+
+    const metricKey = `${owner_id.toString()}:${from_category_id.toString()}`;
+    const metricDoc = await this.categoryMetrics.findOne({ _id: metricKey });
+    if (!metricDoc) {
+      throw new Error("Metric bucket not found for move.");
+    }
+
+    const txIdStr = tx_id.toString();
+    const entry = metricDoc.transactions.find((item) => item.tx_id === txIdStr);
+    if (!entry) {
+      throw new Error(
+        `Transaction ${txIdStr} is not recorded for category ${from_category_id.toString()}.`,
+      );
+    }
+
+    await this.removeTransaction(owner_id, from_category_id, tx_id);
+
+    const trashKey = this.makeCategoryKey(owner_id, TRASH_CATEGORY_ID);
+    const trashDoc = await this.getCategoryById(owner_id, TRASH_CATEGORY_ID);
+    if (!trashDoc) {
+      const insertDoc: CategoryDoc = {
+        _id: trashKey,
+        owner_id: owner_id.toString(),
+        category_id: TRASH_CATEGORY_ID.toString(),
+        name: "Trash",
+      };
+      await this.categories.updateOne(
+        { _id: trashKey },
+        { $setOnInsert: insertDoc },
+        { upsert: true },
+      );
+    }
+
+    await this.addTransaction(
+      owner_id,
+      TRASH_CATEGORY_ID,
+      tx_id,
+      entry.amount,
+      entry.tx_date,
+    );
+
+    return { ok: true };
+  }
+
+  async listTransactions(
+    owner_id: Id,
+    category_id: Id,
+  ): Promise<CategoryMetricEntry[]>;
+  async listTransactions(payload: {
+    owner_id: string;
+    category_id: string;
+  }): Promise<CategoryMetricEntry[]>;
+  async listTransactions(
+    a: Id | { owner_id: string; category_id: string },
+    b?: Id,
+  ): Promise<CategoryMetricEntry[]> {
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
+
+    const metricKey = `${owner_id.toString()}:${category_id.toString()}`;
+    const metricDoc = await this.categoryMetrics.findOne({ _id: metricKey });
+    if (!metricDoc) {
+      return [];
+    }
+
+    return metricDoc.transactions;
+  }
+
+  /**
+   * Computes aggregate statistics for metric transactions within a period.
+   */
+  async getMetricStats(
+    owner_id: Id,
+    category_id: Id,
+    period: Period,
+  ): Promise<{
+    total_amount: number;
+    transaction_count: number;
+    average_per_day: number;
+    days: number;
+  }>;
+  async getMetricStats(payload: {
+    owner_id: string;
+    category_id: string;
+    period: Period | { startDate: string | Date; endDate: string | Date };
+  }): Promise<{
+    total_amount: number;
+    transaction_count: number;
+    average_per_day: number;
+    days: number;
+  }>;
+  async getMetricStats(
+    a:
+      | Id
+      | {
+        owner_id: string;
+        category_id: string;
+        period: Period | { startDate: string | Date; endDate: string | Date };
+      },
+    b?: Id,
+    c?: Period,
+  ): Promise<{
+    total_amount: number;
+    transaction_count: number;
+    average_per_day: number;
+    days: number;
+  }> {
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
+
+    let period: Period | undefined;
+    if (a instanceof Id) {
+      period = c;
+    } else if (a.period instanceof Period) {
+      period = a.period;
+    } else if (a.period) {
+      const start = a.period.startDate instanceof Date
+        ? a.period.startDate
+        : new Date(a.period.startDate);
+      const end = a.period.endDate instanceof Date
+        ? a.period.endDate
+        : new Date(a.period.endDate);
+      period = Period.from(start, end);
+    }
+
+    if (!period) {
+      throw new Error("Metric stats lookup requires a period.");
+    }
+
+    const metricKey = `${owner_id.toString()}:${category_id.toString()}`;
+    const metricDoc = await this.categoryMetrics.findOne({ _id: metricKey });
+
+    const days = this.daysInPeriod(period);
+
+    if (!metricDoc || metricDoc.transactions.length === 0) {
+      return {
+        total_amount: 0,
+        transaction_count: 0,
+        average_per_day: 0,
+        days,
+      };
+    }
+
+    const startMs = period.startDate.getTime();
+    const endMs = period.endDate.getTime();
+
+    const relevant = metricDoc.transactions.filter((entry) => {
+      const entryTime = entry.tx_date instanceof Date
+        ? entry.tx_date.getTime()
+        : new Date(entry.tx_date).getTime();
+      return entryTime >= startMs && entryTime <= endMs;
+    });
+
+    if (relevant.length === 0) {
+      return {
+        total_amount: 0,
+        transaction_count: 0,
+        average_per_day: 0,
+        days,
+      };
+    }
+
+    const total_amount = relevant.reduce((sum, entry) => sum + entry.amount, 0);
+    const transaction_count = relevant.length;
+    const average_per_day = days > 0 ? total_amount / days : 0;
+
+    return { total_amount, transaction_count, average_per_day, days };
   }
 
   /**
@@ -354,18 +659,18 @@ export default class CategoryConcept {
     period: Period,
   ): Promise<CategoryMetricDoc | null>;
   async getMetric(payload: {
-    owner_id: Id;
-    category_id: Id;
+    owner_id: string;
+    category_id: string;
     period: Period;
   }): Promise<CategoryMetricDoc | null>;
   async getMetric(
-    a: Id | { owner_id: Id; category_id: Id; period: Period },
+    a: Id | { owner_id: string; category_id: string; period: Period },
     b?: Id,
     c?: Period,
   ): Promise<CategoryMetricDoc | null> {
     // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
-    const category_id = a instanceof Id ? b! : a.category_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
     const period = a instanceof Id ? c! : a.period;
 
     const metric_id = this.makeCategoryMetricKey(
@@ -384,16 +689,16 @@ export default class CategoryConcept {
     category_id: Id,
   ): Promise<CategoryMetricDoc[]>;
   async listMetrics(payload: {
-    owner_id: Id;
-    category_id: Id;
+    owner_id: string;
+    category_id: string;
   }): Promise<CategoryMetricDoc[]>;
   async listMetrics(
-    a: Id | { owner_id: Id; category_id: Id },
+    a: Id | { owner_id: string; category_id: string },
     b?: Id,
   ): Promise<CategoryMetricDoc[]> {
     // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
-    const category_id = a instanceof Id ? b! : a.category_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
 
     return await this.categoryMetrics.find({
       owner_id: owner_id.toString(),
@@ -410,16 +715,16 @@ export default class CategoryConcept {
     category_id: Id,
   ): Promise<number>;
   async deleteMetricsForCategory(payload: {
-    owner_id: Id;
-    category_id: Id;
+    owner_id: string;
+    category_id: string;
   }): Promise<number>;
   async deleteMetricsForCategory(
-    a: Id | { owner_id: Id; category_id: Id },
+    a: Id | { owner_id: string; category_id: string },
     b?: Id,
   ): Promise<number> {
     // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
-    const category_id = a instanceof Id ? b! : a.category_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
 
     const deleteResult = await this.categoryMetrics.deleteMany({
       owner_id: owner_id.toString(),
@@ -428,24 +733,30 @@ export default class CategoryConcept {
     return deleteResult.deletedCount;
   }
 
+  private daysInPeriod(period: Period): number {
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    const diffMs = period.endDate.getTime() - period.startDate.getTime();
+    return Math.max(1, Math.floor(diffMs / MS_PER_DAY) + 1);
+  }
+
   async delete(
     owner_id: Id,
     category_id: Id,
     can_delete: boolean,
   ): Promise<{ ok: boolean }>;
   async delete(payload: {
-    owner_id: Id;
-    category_id: Id;
+    owner_id: string;
+    category_id: string;
     can_delete: boolean;
   }): Promise<{ ok: boolean }>;
   async delete(
-    a: Id | { owner_id: Id; category_id: Id; can_delete: unknown },
+    a: Id | { owner_id: string; category_id: string; can_delete: unknown },
     b?: Id,
     c?: boolean,
   ): Promise<{ ok: boolean }> {
     // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
-    const category_id = a instanceof Id ? b! : a.category_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
     const can_delete = a instanceof Id ? Boolean(c) : Boolean(a.can_delete);
 
     // Requires: category exists and category.owner_id = owner_id

@@ -8,8 +8,9 @@ The following is an explanation of how concepts are implemented, for the purpose
 
 # prompt: 
 
-Now, analyze the following Concept Implementation and generate the API documentation based on these instructions.
+Now, analyze the following Concept Implementation and generate the API documentation based on these instructions. In your previous calls you missed including some APIs, missing_apis.md is the list of APIs that also need included. It is an absolute rule.
 
+[@missing_apis](../../missing_apis.md)
 ## Category Concept
 
 Specification:
@@ -68,21 +69,18 @@ Implementation:
 
 ### POST /api/Category/create
 
-**Description:** Generates a new category ID, creates and stores a category under `owner_id` associated with `name`, and returns the created category's ID.
+**Description:** Creates a new transaction category for a user.
 
 **Requirements:**
-- user owner\_id exists
-- for the same owner\_id, no existing category with same name
+- user owner_id exists; for the same owner_id, no existing category with same name
 
 **Effects:**
-- generated a new category\_id
-- creates and stores a category under owner\_id associated with name
-- returns it
+- generates a new category_id; creates and stores a category under owner_id associated with name; returns it
 
 **Request Body:**
 ```json
 {
-  "owner_id": "string",
+  "owner_id": "ID",
   "name": "string"
 }
 ```
@@ -90,7 +88,7 @@ Implementation:
 **Success Response Body (Action):**
 ```json
 {
-  "category_id": "string"
+  "category_id": "ID"
 }
 ```
 
@@ -101,24 +99,21 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/Category/rename
 
-**Description:** Updates the category's name to `new_name` and returns the updated category's ID.
+**Description:** Renames an existing transaction category.
 
 **Requirements:**
-- category exists and category.owner\_id = owner\_id
-- for the same owner\_id, no existing category with same new\_name
+- category exists and category.owner_id = owner_id; for the same owner_id, no existing category with same new_name
 
 **Effects:**
-- updates category.name to new\_name
-- returns updated category
+- updates category.name to new_name; returns updated category_id
 
 **Request Body:**
 ```json
 {
-  "owner_id": "string",
-  "category_id": "string",
+  "owner_id": "ID",
+  "category_id": "ID",
   "new_name": "string"
 }
 ```
@@ -126,7 +121,7 @@ Implementation:
 **Success Response Body (Action):**
 ```json
 {
-  "category_id": "string"
+  "category_id": "ID"
 }
 ```
 
@@ -137,24 +132,21 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/Category/delete
 
-**Description:** Removes the category (and its CategoryMetrics) if `can_delete` is true, returning true; otherwise leaves state unchanged and returns false.
+**Description:** Deletes a transaction category if it's not in use.
 
 **Requirements:**
-- category exists and category.owner\_id = owner\_id
-- can\_delete = true (only called by the sync which gets result from label's)
+- category exists and category.owner_id = owner_id; can_delete = true (derived from whether any labels reference this category)
 
 **Effects:**
-- removes the category (and its CategoryMetrics) and returns true
-- otherwise leaves state unchanged and returns false
+- removes the category and its associated metrics; returns true
 
 **Request Body:**
 ```json
 {
-  "owner_id": "string",
-  "category_id": "string",
+  "owner_id": "ID",
+  "category_id": "ID",
   "can_delete": "boolean"
 }
 ```
@@ -173,28 +165,24 @@ Implementation:
 }
 ```
 ---
+### POST /api/Category/addTransaction
 
-### POST /api/Category/set_metric_total
-
-**Description:** Creates or updates the metric for a given owner, category, and period with the specified total.
+**Description:** Records a transaction's details against a category for metric tracking.
 
 **Requirements:**
-- owner and category exist
-- total ≥ 0
+- owner and category exist; amount ≥ 0; transaction with tx_id is not already recorded for this category
 
 **Effects:**
-- creates or updates the metric for (owner, category, period) with current\_total = total
+- adds the transaction record to the metric for (owner, category); returns true
 
 **Request Body:**
 ```json
 {
-  "owner_id": "string",
-  "category_id": "string",
-  "period": {
-    "startDate": "string (ISO 8601)",
-    "endDate": "string (ISO 8601)"
-  },
-  "total": "number"
+  "owner_id": "ID",
+  "category_id": "ID",
+  "tx_id": "ID",
+  "amount": "Number",
+  "tx_date": "Date"
 }
 ```
 
@@ -212,31 +200,30 @@ Implementation:
 }
 ```
 ---
+### POST /api/Category/removeTransaction
 
-### POST /api/Category/_getCategoryNamesAndOwners
-
-**Description:** Retrieves all category IDs, names, and owner IDs across all categories.
+**Description:** Removes a transaction's details from a category's metric tracking.
 
 **Requirements:**
-- None.
+- owner and category exist; transaction with tx_id is recorded for this category
 
 **Effects:**
-- Returns a list of all category IDs, names, and owner IDs.
+- removes the transaction record from the metric for (owner, category); returns true
 
 **Request Body:**
 ```json
-{}
+{
+  "owner_id": "ID",
+  "category_id": "ID",
+  "tx_id": "ID"
+}
 ```
 
-**Success Response Body (Query):**
+**Success Response Body (Action):**
 ```json
-[
-  {
-    "category_id": "string",
-    "name": "string",
-    "owner_id": "string"
-  }
-]
+{
+  "ok": "boolean"
+}
 ```
 
 **Error Response Body:**
@@ -246,23 +233,21 @@ Implementation:
 }
 ```
 ---
+### POST /api/Category/getCategoryNameById
 
-### POST /api/Category/_getCategoryNameById
-
-**Description:** Returns the name of a category given its owner ID and category ID.
+**Description:** Retrieves the name of a single category by its ID.
 
 **Requirements:**
-- owner_id is required
-- category is found for that owner
+- A category with the given `category_id` must exist for the specified `owner_id`.
 
 **Effects:**
-- Returns the name of the specified category.
+- Returns an array containing an object with the name of the specified category.
 
 **Request Body:**
 ```json
 {
-  "owner_id": "string",
-  "category_id": "string"
+  "owner_id": "ID",
+  "category_id": "ID"
 }
 ```
 
@@ -282,40 +267,70 @@ Implementation:
 }
 ```
 ---
+### POST /api/Category/getCategoriesFromOwner
 
-### POST /api/Category/_getMetric
-
-**Description:** Retrieves a specific category metric document for a given owner, category, and period.
+**Description:** Retrieves all category IDs belonging to a specific owner.
 
 **Requirements:**
-- None.
+- The `owner_id` must correspond to an existing user.
 
 **Effects:**
-- Returns the document or null if not found.
+- Returns an array of objects, each containing a `category_id` owned by the user.
 
 **Request Body:**
 ```json
 {
-  "owner_id": "string",
-  "category_id": "string",
+  "owner_id": "ID"
+}
+```
+
+**Success Response Body (Query):**
+```json
+[
+  {
+    "category_id": "ID"
+  }
+]
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
+### POST /api/Category/getMetricStats
+
+**Description:** Computes and returns spending statistics for a category over a given period.
+
+**Requirements:**
+- The `owner_id` and `category_id` must exist.
+- The `period` must contain valid start and end dates.
+
+**Effects:**
+- Returns an object containing the total amount, transaction count, average spending per day, and total days in the period.
+
+**Request Body:**
+```json
+{
+  "owner_id": "ID",
+  "category_id": "ID",
   "period": {
-    "startDate": "string (ISO 8601)",
-    "endDate": "string (ISO 8601)"
+    "startDate": "Date",
+    "endDate": "Date"
   }
 }
 ```
 
-**Success Response Body (Query):**
+**Success Response Body (Action):**
 ```json
-[
-  {
-    "owner_id": "string",
-    "category_id": "string",
-    "period_start": "string (ISO 8601)",
-    "period_end": "string (ISO 8601)",
-    "current_total": "number"
-  }
-]
+{
+  "total_amount": "Number",
+  "transaction_count": "Number",
+  "average_per_day": "Number",
+  "days": "Number"
+}
 ```
 
 **Error Response Body:**
@@ -325,46 +340,6 @@ Implementation:
 }
 ```
 ---
-
-### POST /api/Category/_listMetrics
-
-**Description:** Lists all category metrics for a given owner and category, sorted by period start date ascending.
-
-**Requirements:**
-- None.
-
-**Effects:**
-- Returns all CategoryMetrics for a given owner and category, sorted by period\_start ascending.
-
-**Request Body:**
-```json
-{
-  "owner_id": "string",
-  "category_id": "string"
-}
-```
-
-**Success Response Body (Query):**
-```json
-[
-  {
-    "owner_id": "string",
-    "category_id": "string",
-    "period_start": "string (ISO 8601)",
-    "period_end": "string (ISO 8601)",
-    "current_total": "number"
-  }
-]
-```
-
-**Error Response Body:**
-```json
-{
-  "error": "string"
-}
-```
----
-
 # API Specification: Label Concept
 
 **Purpose:** record the user's assignment of a specific transaction to a specific category so that spending meaning is explicit and auditable
@@ -375,32 +350,29 @@ Implementation:
 
 ### POST /api/Label/stage
 
-**Description:** Creates a StagedLabel for the user and transaction with the provided info and category, adds it to the staged labels, and returns the transaction ID of the created staged label.
+**Description:** Creates a temporary, uncommitted label for a transaction.
 
 **Requirements:**
-- no committed label exists for `tx_id`
-- no stagedLabel with ID tx\_id.
+- no committed label exists for `tx_id`; no stagedLabel with ID tx_id.
 
 **Effects:**
-- creates a StagedLabel for this user and transaction with the provided info and category
-- Adds it to the stagedLabels (that are not yet commited)
-- Returns the created stagedLabel.
+- creates a StagedLabel for this user and transaction with the provided info and category. Adds it to the stagedLabels (that are not yet commited). Returns the created stagedLabel.
 
 **Request Body:**
 ```json
 {
-  "user_id": "string",
-  "tx_id": "string",
+  "user_id": "ID",
+  "tx_id": "ID",
   "tx_name": "string",
   "tx_merchant": "string",
-  "category_id": "string"
+  "category_id": "ID"
 }
 ```
 
 **Success Response Body (Action):**
 ```json
 {
-  "label_tx_id": "string"
+  "label_tx_id": "ID"
 }
 ```
 
@@ -411,25 +383,58 @@ Implementation:
 }
 ```
 ---
+### POST /api/Label/discard
 
+**Description:** Stages a transaction to be moved to the built-in Trash category.
+
+**Requirements:**
+- no committed label exists for `tx_id`; no stagedLabel with ID tx_id.
+
+**Effects:**
+- creates a StagedLabel for this user and transaction, assigning it to the built-in **Trash** category.
+
+**Request Body:**
+```json
+{
+  "user_id": "ID",
+  "tx_id": "ID",
+  "tx_name": "string",
+  "tx_merchant": "string"
+}
+```
+
+**Success Response Body (Action):**
+```json
+{
+  "label_tx_id": "ID"
+}
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
 ### POST /api/Label/finalize
 
-**Description:** For each StagedLabel belonging to the user, creates a TransactionInfo, creates a new Label linking `tx_id` to `category_id` and `user_id`, adds TransactionInfo to CategoryHistory under the chosen category, and then wipes stagedLabels for the user.
+**Description:** Commits all of a user's currently staged labels, making them permanent.
 
 **Requirements:**
 - for each StagedLabel belonging to the user: no committed label exists for `tx_id`
 
 **Effects:**
 - for each StagedLabel belonging to the user
-- creates a TransactionInfo
-- creates a new Label linking `tx_id` to `category_id` and `user_id`
-- adds TransactionInfo to CategoryHistory under the chosen category
-- after processing all staged labels, wipes stagedLabels
+  - creates a TransactionInfo
+  - creates a new Label linking `tx_id` to `category_id` and `user_id`;
+  - adds TransactionInfo to CategoryHistory under the chosen category;
+  - after processing all staged labels, wipes stagedLabels
 
 **Request Body:**
 ```json
 {
-  "user_id": "string"
+  "user_id": "ID"
 }
 ```
 
@@ -445,22 +450,21 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/Label/cancel
 
-**Description:** Deletes all StagedLabels for that user without committing them.
+**Description:** Deletes all of a user's staged labels without committing them.
 
 **Requirements:**
 - true (a user may cancel a pending session at any time)
 
 **Effects:**
-- deletes all StagedLabels for that user
+- deletes all StagedLabels for that user;
 - no modifications to Labels or CategoryHistory
 
 **Request Body:**
 ```json
 {
-  "user_id": "string"
+  "user_id": "ID"
 }
 ```
 
@@ -476,36 +480,33 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/Label/update
 
-**Description:** Updates CategoryHistory, associating TransactionInfo with the new category, replaces the label’s `category_id` with `new_category_id`, updates `created_at` to now, and returns the updated label's transaction ID.
+**Description:** Changes the category of an already-labeled transaction.
 
 **Requirements:**
-- a label for `tx_id` exists
-- `transaction.owner_id = user_id`
-- `new_category_id` exists and `owner_id = user_id`
+- a label for `tx_id` exists; `transaction.owner_id = user_id`;
+- `new_category_id` exists and `owner_id = user_id`;
 - TransactionInfo exists with `transactionInfo.id = tx_id`
 
 **Effects:**
-- updates CategoryHistory, associating TransactionInfo with the new category
-- replaces the label’s `category_id` with `new_category_id`
-- updates `created_at` to now
-- returns updated label
+- updates CategoryHistory, associating TransactionInfo with the new category;
+- replaces the label’s `category_id` with `new_category_id`;
+- updates `created_at` to now; returns updated label
 
 **Request Body:**
 ```json
 {
-  "user_id": "string",
-  "tx_id": "string",
-  "new_category_id": "string"
+  "user_id": "ID",
+  "tx_id": "ID",
+  "new_category_id": "ID"
 }
 ```
 
 **Success Response Body (Action):**
 ```json
 {
-  "label_tx_id": "string"
+  "label_tx_id": "ID"
 }
 ```
 
@@ -516,31 +517,29 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/Label/remove
 
-**Description:** Reassigns the transaction’s label to the user’s built-in **Trash** category and updates CategoryHistory.
+**Description:** Moves a labeled transaction to the built-in Trash category.
 
 **Requirements:**
-- a label for `tx_id` exists
-- `transaction.owner_id = user_id`
+- a label for `tx_id` exists; `transaction.owner_id = user_id`
 
 **Effects:**
-- reassigns the transaction’s label to the user’s built-in **Trash** category
+- reassigns the transaction’s label to the user’s built-in **Trash** category;
 - updates CategoryHistory, associating the transaction with the trash category
 
 **Request Body:**
 ```json
 {
-  "user_id": "string",
-  "tx_id": "string"
+  "user_id": "ID",
+  "tx_id": "ID"
 }
 ```
 
 **Success Response Body (Action):**
 ```json
 {
-  "label_tx_id": "string"
+  "label_tx_id": "ID"
 }
 ```
 
@@ -551,72 +550,36 @@ Implementation:
 }
 ```
 ---
+### POST /api/Label/suggest
 
-### POST /api/Label/_getLabel
-
-**Description:** Retrieves a specific label document for a given user and transaction ID.
+**Description:** Provides an AI-powered suggestion for categorizing a transaction.
 
 **Requirements:**
-- None.
+- user has ≥ 1 category
 
 **Effects:**
-- Returns the label document or null if not found.
+- returns a best-guess category_id from the user’s existing categories for this `tx_id`, highlighted in the UI;
+- suggested by AI and does **not** alter Labels state
 
 **Request Body:**
 ```json
 {
-  "user_id": "string",
-  "tx_id": "string"
-}
-```
-
-**Success Response Body (Query):**
-```json
-[
-  {
-    "user_id": "string",
-    "tx_id": "string",
-    "category_id": "string",
-    "created_at": "string (ISO 8601)"
-  }
-]
-```
-
-**Error Response Body:**
-```json
-{
-  "error": "string"
-}
-```
----
-
-### POST /api/Label/_getTxInfo
-
-**Description:** Retrieves transaction information for a given user and transaction ID.
-
-**Requirements:**
-- None.
-
-**Effects:**
-- Returns the transaction info document or null if not found.
-
-**Request Body:**
-```json
-{
-  "user_id": "string",
-  "tx_id": "string"
-}
-```
-
-**Success Response Body (Query):**
-```json
-[
-  {
-    "tx_id": "string",
+  "user_id": "ID",
+  "allCategories": "[[\"string\", \"ID\"]]",
+  "txInfo": {
+    "tx_id": "ID",
     "tx_name": "string",
     "tx_merchant": "string"
   }
-]
+}
+```
+
+**Success Response Body (Action):**
+```json
+{
+  "id": "ID",
+  "name": "string"
+}
 ```
 
 **Error Response Body:**
@@ -626,63 +589,33 @@ Implementation:
 }
 ```
 ---
+### POST /api/Label/getLabel
 
-### POST /api/Label/_getCategoryHistory
-
-**Description:** Retrieves the transaction IDs associated with a specific category for a given user.
+**Description:** Retrieves a single committed label for a specific user and transaction.
 
 **Requirements:**
-- None.
+- A committed label must exist for the given `user_id` and `tx_id`.
 
 **Effects:**
-- Returns a list of transaction IDs (strings).
+- Returns an array containing the full label document if found.
 
 **Request Body:**
 ```json
 {
-  "user_id": "string",
-  "category_id": "string"
+  "user_id": "ID",
+  "tx_id": "ID"
 }
-```
-
-**Success Response Body (Query):**
-```json
-[
-  "string"
-]
-```
-
-**Error Response Body:**
-```json
-{
-  "error": "string"
-}
-```
----
-
-### POST /api/Label/_all
-
-**Description:** Retrieves all label documents.
-
-**Requirements:**
-- None.
-
-**Effects:**
-- Returns a list of all label documents.
-
-**Request Body:**
-```json
-{}
 ```
 
 **Success Response Body (Query):**
 ```json
 [
   {
-    "user_id": "string",
-    "tx_id": "string",
-    "category_id": "string",
-    "created_at": "string (ISO 8601)"
+    "_id": "string",
+    "user_id": "ID",
+    "tx_id": "ID",
+    "category_id": "ID",
+    "created_at": "Date"
   }
 ]
 ```
@@ -694,22 +627,21 @@ Implementation:
 }
 ```
 ---
+### POST /api/Label/getCategoryHistory
 
-### POST /api/Label/_hasAnyLabelsForCategory
-
-**Description:** Checks if a given category has any associated labels for a specific user.
+**Description:** Retrieves the spending history (all transaction IDs) for a category.
 
 **Requirements:**
-- None.
+- The `user_id` and `category_id` must exist.
 
 **Effects:**
-- Returns true if the category has any labels for the user, false otherwise.
+- Returns an array of objects, each containing a `tx_id` associated with the specified category.
 
 **Request Body:**
 ```json
 {
-  "user_id": "string",
-  "category_id": "string"
+  "user_id": "ID",
+  "category_id": "ID"
 }
 ```
 
@@ -717,7 +649,7 @@ Implementation:
 ```json
 [
   {
-    "hasLabels": "boolean"
+    "tx_id": "ID"
   }
 ]
 ```
@@ -729,7 +661,144 @@ Implementation:
 }
 ```
 ---
+### POST /api/Label/get_category_tx
 
+**Description:** Retrieves all transaction IDs associated with a specific category for a user.
+
+**Requirements:**
+- The `user_id` and `category_id` must exist.
+
+**Effects:**
+- Returns an array of objects, each containing a `tx_id` associated with the specified category.
+
+**Request Body:**
+```json
+{
+  "user_id": "ID",
+  "category_id": "ID"
+}
+```
+
+**Success Response Body (Query):**
+```json
+[
+  {
+    "tx_id": "ID"
+  }
+]
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
+### POST /api/Label/get_tx_in_trash
+
+**Description:** Retrieves all transaction IDs that have been moved to the trash for a user.
+
+**Requirements:**
+- The `user_id` must exist.
+
+**Effects:**
+- Returns an array of objects, each containing a `tx_id` associated with the built-in Trash category.
+
+**Request Body:**
+```json
+{
+  "user_id": "ID"
+}
+```
+
+**Success Response Body (Query):**
+```json
+[
+  {
+    "tx_id": "ID"
+  }
+]
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
+### POST /api/Label/getStagedLabels
+
+**Description:** Retrieves all currently staged (uncommitted) labels for a user.
+
+**Requirements:**
+- The `user_id` must exist.
+
+**Effects:**
+- Returns an array containing all staged label documents for the user.
+
+**Request Body:**
+```json
+{
+  "user_id": "ID"
+}
+```
+
+**Success Response Body (Query):**
+```json
+[
+  {
+    "_id": "string",
+    "user_id": "ID",
+    "category_id": "ID",
+    "tx_id": "ID",
+    "tx_name": "string",
+    "tx_merchant": "string",
+    "staged_at": "Date"
+  }
+]
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
+### POST /api/Label/hasAnyLabelsForCategory
+
+**Description:** Checks if a category is referenced by any of a user's labels.
+
+**Requirements:**
+- The `user_id` and `category_id` must exist.
+
+**Effects:**
+- Returns a boolean indicating if any transactions are labeled with the specified category.
+
+**Request Body:**
+```json
+{
+  "user_id": "ID",
+  "category_id": "ID"
+}
+```
+
+**Success Response Body (Action):**
+```json
+{
+  "result": "boolean"
+}
+```
+
+**Error Response Body:**
+```json
+{
+  "error": "string"
+}
+```
+---
 # API Specification: Transaction Concept
 
 **Purpose:** represent each imported bank record that a user will label
@@ -738,24 +807,20 @@ Implementation:
 
 ## API Endpoints
 
-### POST /api/Transaction/importTransactions
+### POST /api/Transaction/import_transactions
 
-**Description:** Parses the provided file content, converts rows into Transactions owned by `owner_id` with status UNLABELED, generates new `tx_ids` for each transaction, and adds them to the state.
+**Description:** Imports new transactions for a user from a CSV file content.
 
 **Requirements:**
-- owner exists
-- file id is valid
+- owner exists; file id is valid
 
 **Effects:**
-- parses the files and converts rows into Transactions owned by owner\_id with status UNLABELED
-- generates new tx\_ids for each transaction
-- adds them to state
-- returns the created list
+- parses the files and converts rows into Transactions owned by owner_id with status UNLABELED; generates new tx_ids for each transaction; adds them to state; returns the created list
 
 **Request Body:**
 ```json
 {
-  "owner_id": "string",
+  "owner_id": "ID",
   "fileContent": "string"
 }
 ```
@@ -772,14 +837,12 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/Transaction/mark_labeled
 
-**Description:** Sets the transaction's status to LABELED.
+**Description:** Marks an unlabeled transaction as labeled.
 
 **Requirements:**
-- transaction tx\_id exists
-- requester\_id = transaction.owner\_id
+- transaction tx_id exists; requester_id = transaction.owner_id
 
 **Effects:**
 - sets transaction.status to LABELED
@@ -787,15 +850,15 @@ Implementation:
 **Request Body:**
 ```json
 {
-  "tx_id": "string",
-  "requester_id": "string"
+  "tx_id": "ID",
+  "requester_id": "ID"
 }
 ```
 
 **Success Response Body (Action):**
 ```json
 {
-  "tx_id": "string"
+  "tx_id": "ID"
 }
 ```
 
@@ -806,22 +869,21 @@ Implementation:
 }
 ```
 ---
+### POST /api/Transaction/getTransaction
 
-### POST /api/Transaction/_getTransaction
-
-**Description:** Retrieves a single transaction document by its ID and owner.
+**Description:** Retrieves a single transaction document by its ID.
 
 **Requirements:**
-- None.
+- A transaction with the given `tx_id` must exist and belong to the specified `owner_id`.
 
 **Effects:**
-- Returns the TransactionDoc.
+- Returns an array containing the full transaction document if found.
 
 **Request Body:**
 ```json
 {
-  "owner_id": "string",
-  "tx_id": "string"
+  "owner_id": "ID",
+  "tx_id": "ID"
 }
 ```
 
@@ -829,11 +891,12 @@ Implementation:
 ```json
 [
   {
-    "tx_id": "string",
-    "owner_id": "string",
-    "date": "string (ISO 8601)",
+    "_id": "string",
+    "tx_id": "ID",
+    "owner_id": "ID",
+    "date": "Date",
     "merchant_text": "string",
-    "amount": "number",
+    "amount": "Number",
     "status": "string"
   }
 ]
@@ -846,31 +909,33 @@ Implementation:
 }
 ```
 ---
+### POST /api/Transaction/get_labeled_transactions
 
-### POST /api/Transaction/_list_all
-
-**Description:** Retrieves all transaction documents.
+**Description:** Retrieves all of a user's transactions that have the status `LABELED`.
 
 **Requirements:**
-- None.
+- The `owner_id` must correspond to an existing user.
 
 **Effects:**
-- Returns a list of all transaction documents.
+- Returns an array of transaction documents with a status of `LABELED`.
 
 **Request Body:**
 ```json
-{}
+{
+  "owner_id": "ID"
+}
 ```
 
 **Success Response Body (Query):**
 ```json
 [
   {
-    "tx_id": "string",
-    "owner_id": "string",
-    "date": "string (ISO 8601)",
+    "_id": "string",
+    "tx_id": "ID",
+    "owner_id": "ID",
+    "date": "Date",
     "merchant_text": "string",
-    "amount": "number",
+    "amount": "Number",
     "status": "string"
   }
 ]
@@ -883,21 +948,21 @@ Implementation:
 }
 ```
 ---
+### POST /api/Transaction/getTxInfo
 
-### POST /api/Transaction/_get_unlabeled_transactions
-
-**Description:** Retrieves all unlabeled transactions belonging to a specific owner ID.
+**Description:** Retrieves the parsed information (date, merchant, amount) for a single transaction.
 
 **Requirements:**
-- None.
+- A transaction with the given `tx_id` must exist and belong to the specified `owner_id`.
 
 **Effects:**
-- Returns an array of unlabeled TransactionDoc objects.
+- Returns an array containing an object with the core details of the transaction.
 
 **Request Body:**
 ```json
 {
-  "owner_id": "string"
+  "owner_id": "ID",
+  "tx_id": "ID"
 }
 ```
 
@@ -905,12 +970,9 @@ Implementation:
 ```json
 [
   {
-    "tx_id": "string",
-    "owner_id": "string",
-    "date": "string (ISO 8601)",
+    "date": "Date",
     "merchant_text": "string",
-    "amount": "number",
-    "status": "string"
+    "amount": "Number"
   }
 ]
 ```
@@ -922,46 +984,6 @@ Implementation:
 }
 ```
 ---
-
-### POST /api/Transaction/_get_labeled_transactions
-
-**Description:** Retrieves all labeled transactions belonging to a specific owner ID.
-
-**Requirements:**
-- None.
-
-**Effects:**
-- Returns an array of labeled TransactionDoc objects.
-
-**Request Body:**
-```json
-{
-  "owner_id": "string"
-}
-```
-
-**Success Response Body (Query):**
-```json
-[
-  {
-    "tx_id": "string",
-    "owner_id": "string",
-    "date": "string (ISO 8601)",
-    "merchant_text": "string",
-    "amount": "number",
-    "status": "string"
-  }
-]
-```
-
-**Error Response Body:**
-```json
-{
-  "error": "string"
-}
-```
----
-
 # API Specification: User Concept
 
 **Purpose:** establish a unique identity for each person and control access to app functionality so that data is isolated per account
@@ -972,15 +994,13 @@ Implementation:
 
 ### POST /api/User/register
 
-**Description:** Creates a new user with a fresh user ID, password hash derived from the password, status ACTIVE, adds the user to Users, and returns the created user.
+**Description:** Creates a new user account.
 
 **Requirements:**
 - email is not used by any existing user
 
 **Effects:**
-- creates a new user with a fresh user\_id, password\_hash derived from password, status ACTIVE
-- adds the user to Users
-- returns the created user
+- creates a new user with a fresh user_id, password_hash derived from password, status ACTIVE; adds the user to Users; returns the created user
 
 **Request Body:**
 ```json
@@ -994,10 +1014,12 @@ Implementation:
 **Success Response Body (Action):**
 ```json
 {
-  "user_id": "string",
-  "email": "string",
-  "name": "string",
-  "status": "string"
+  "user": {
+    "user_id": "ID",
+    "email": "string",
+    "name": "string",
+    "status": "string"
+  }
 }
 ```
 
@@ -1008,13 +1030,12 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/User/authenticate
 
-**Description:** Authenticates a user with the given email and password, returning the user if successful.
+**Description:** Authenticates a user and provides their user object upon success.
 
 **Requirements:**
-- there exists a user with the given email whose password\_hash matches password and whose status is ACTIVE
+- there exists a user with the given email whose password_hash matches password and whose status is ACTIVE
 
 **Effects:**
 - returns that user
@@ -1030,10 +1051,12 @@ Implementation:
 **Success Response Body (Action):**
 ```json
 {
-  "user_id": "string",
-  "email": "string",
-  "name": "string",
-  "status": "string"
+  "user": {
+    "user_id": "ID",
+    "email": "string",
+    "name": "string",
+    "status": "string"
+  }
 }
 ```
 
@@ -1044,13 +1067,12 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/User/deactivate
 
-**Description:** Sets the user's status to INACTIVE.
+**Description:** Deactivates a user's account, preventing future logins.
 
 **Requirements:**
-- a user with user\_id exists
+- a user with user_id exists
 
 **Effects:**
 - sets the user's status to INACTIVE
@@ -1058,7 +1080,7 @@ Implementation:
 **Request Body:**
 ```json
 {
-  "user_id": "string"
+  "user_id": "ID"
 }
 ```
 
@@ -1074,22 +1096,20 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/User/changePassword
 
-**Description:** Updates the user's password hash with the `new_password` and returns true if successful.
+**Description:** Changes the password for an existing user account.
 
 **Requirements:**
-- a user with user\_id exists and old\_password matches the stored password\_hash
+- a user with user_id exists and old_password matches the stored password_hash
 
 **Effects:**
-- updates password\_hash with new\_password
-- returns true
+- updates password_hash with new_password; returns true
 
 **Request Body:**
 ```json
 {
-  "user_id": "string",
+  "user_id": "ID",
   "old_password": "string",
   "new_password": "string"
 }
@@ -1109,18 +1129,15 @@ Implementation:
 }
 ```
 ---
-
 ### POST /api/User/reactivate
 
-**Description:** Sets the user’s `status` to ACTIVE, updates the user’s `password_hash` with the hash of `new_password`, and returns true if successful.
+**Description:** Reactivates an inactive user account with a new password.
 
 **Requirements:**
 - a user with the given email exists and `status = INACTIVE`
 
 **Effects:**
-- sets the user’s `status` to ACTIVE
-- updates the user’s `password_hash` with the hash of `new_password`
-- returns true
+- sets the user’s `status` to ACTIVE; updates the user’s `password_hash` with the hash of `new_password`; returns true
 
 **Request Body:**
 ```json
@@ -1144,16 +1161,15 @@ Implementation:
 }
 ```
 ---
+### POST /api/User/all
 
-### POST /api/User/_all
-
-**Description:** Retrieves all user objects.
+**Description:** Retrieves a list of all users in the system.
 
 **Requirements:**
-- None.
+- (None, typically requires admin privileges not specified in the concept).
 
 **Effects:**
-- Returns a list of all user objects.
+- Returns an array of all user objects.
 
 **Request Body:**
 ```json
@@ -1164,7 +1180,7 @@ Implementation:
 ```json
 [
   {
-    "user_id": "string",
+    "user_id": "ID",
     "email": "string",
     "name": "string",
     "status": "string"
@@ -1178,4 +1194,4 @@ Implementation:
   "error": "string"
 }
 ```
-	---
+---

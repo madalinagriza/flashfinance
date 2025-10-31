@@ -1,3 +1,4 @@
+(OLD)
 ## Interesting moments
 
 1. Parsing the bank statements is a *big* fish to fry although it feels like one action. I need to ask more friends to give me sample bank statements, and if the current, deterministic parsing doesn't satisfy a good chunk of the bank statements, I'll probably integrate AI calls to determine which columns refer to merchant_info, to amounts, etc.   

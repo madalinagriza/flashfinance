@@ -128,15 +128,15 @@ export default class TransactionConcept {
    */
   async getTransaction(owner_id: Id, tx_id: Id): Promise<TransactionDoc>;
   async getTransaction(
-    payload: { owner_id: Id; tx_id: Id },
+    payload: { owner_id: string; tx_id: string },
   ): Promise<TransactionDoc>;
   async getTransaction(
-    a: Id | { owner_id: Id; tx_id: Id },
+    a: Id | { owner_id: string; tx_id: string },
     b?: Id,
   ): Promise<TransactionDoc> {
     // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
-    const tx_id = a instanceof Id ? b! : a.tx_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
 
     const ownerIdStr = owner_id.toString();
     const txMongoId = this.makeTxMongoId(tx_id);
@@ -167,15 +167,15 @@ export default class TransactionConcept {
    */
   async mark_labeled(tx_id: Id, requester_id: Id): Promise<{ tx_id: Id }>;
   async mark_labeled(
-    payload: { tx_id: Id; requester_id: Id },
+    payload: { tx_id: string; requester_id: string },
   ): Promise<{ tx_id: Id }>;
   async mark_labeled(
-    a: Id | { tx_id: Id; requester_id: Id },
+    a: Id | { tx_id: string; requester_id: string },
     b?: Id,
   ): Promise<{ tx_id: Id }> {
     // narrow both styles
-    const tx_id = a instanceof Id ? a : a.tx_id;
-    const requester_id = a instanceof Id ? b! : a.requester_id;
+    const tx_id = a instanceof Id ? a : Id.from(a.tx_id);
+    const requester_id = a instanceof Id ? b! : Id.from(a.requester_id);
 
     const txMongoId = this.makeTxMongoId(tx_id);
     const requesterIdStr = requester_id.toString();
@@ -358,14 +358,9 @@ export default class TransactionConcept {
         if (!isNaN(parsedValue)) {
           if (isExplicitOutflow === true) {
             // Identified as debit/outflow source. Keep if positive.
-            if (parsedValue > 0) {
-              amount = parsedValue;
-            } else {
-              // Negative value in a debit column is effectively an inflow (reversal). Skip.
-              console.log(
-                `Skipping negative value (${parsedValue}) from debit-identified column (assumed inflow).`,
-              );
-              amount = null;
+            const normalized = Math.abs(parsedValue);
+            if (normalized > 0) {
+              amount = normalized;
             }
           } else if (isExplicitOutflow === false) {
             // Identified as credit/inflow source. Always skip for "outflow only" requirement.
@@ -376,11 +371,11 @@ export default class TransactionConcept {
           } else {
             // Generic 'Amount' column, no explicit debit/credit column or type
             // Assume positive value is outflow, negative value is inflow.
-            if (parsedValue > 0) {
-              amount = parsedValue;
-            } else {
+            if (parsedValue < 0) {
+              amount = Math.abs(parsedValue);
+            } else if (parsedValue > 0) {
               console.log(
-                `Skipping negative value (${parsedValue}) from generic amount column (assumed inflow).`,
+                `Skipping positive value (${parsedValue}) from generic amount column (assumed deposit).`,
               );
               amount = null;
             }
@@ -429,10 +424,10 @@ export default class TransactionConcept {
     fileContent: string,
   ): Promise<void>;
   async import_transactions(
-    payload: { owner_id: Id; fileContent: string },
+    payload: { owner_id: string; fileContent: string },
   ): Promise<void>;
   async import_transactions(
-    a: Id | { owner_id: Id; fileContent: unknown },
+    a: Id | { owner_id: string; fileContent: unknown },
     b?: string,
   ): Promise<void> {
     // narrow both styles
@@ -442,7 +437,7 @@ export default class TransactionConcept {
     }
 
     // narrow both styles
-    const owner_id = a instanceof Id ? a : a.owner_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
     const fileContent = a instanceof Id ? String(b) : String(a.fileContent);
 
     if (!owner_id) {
@@ -480,12 +475,12 @@ export default class TransactionConcept {
    */
   async get_unlabeled_transactions(owner_id: Id): Promise<TransactionDoc[]>;
   async get_unlabeled_transactions(
-    payload: { owner_id: Id },
+    payload: { owner_id: string },
   ): Promise<TransactionDoc[]>;
   async get_unlabeled_transactions(
-    a: Id | { owner_id: Id },
+    a: Id | { owner_id: string },
   ): Promise<TransactionDoc[]> {
-    const owner_id = a instanceof Id ? a : a.owner_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
     return await this.transactions.find({
       owner_id: owner_id.toString(),
       status: TransactionStatus.UNLABELED,
@@ -500,15 +495,40 @@ export default class TransactionConcept {
    */
   async get_labeled_transactions(owner_id: Id): Promise<TransactionDoc[]>;
   async get_labeled_transactions(
-    payload: { owner_id: Id },
+    payload: { owner_id: string },
   ): Promise<TransactionDoc[]>;
   async get_labeled_transactions(
-    a: Id | { owner_id: Id },
+    a: Id | { owner_id: string },
   ): Promise<TransactionDoc[]> {
-    const owner_id = a instanceof Id ? a : a.owner_id;
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
     return await this.transactions.find({
       owner_id: owner_id.toString(),
       status: TransactionStatus.LABELED,
     }).toArray();
+  }
+
+  /**
+   * Returns parsed transaction info (date, merchant_text, amount) for a given owner and tx_id.
+   * This mirrors the information previously exposed by LabelConcept.getTxInfo but lives
+   * in TransactionConcept where transaction data is authoritative.
+   */
+  async getTxInfo(owner_id: Id, tx_id: Id): Promise<ParsedTransactionInfo>;
+  async getTxInfo(
+    payload: { owner_id: string; tx_id: string },
+  ): Promise<ParsedTransactionInfo>;
+  async getTxInfo(
+    a: Id | { owner_id: string; tx_id: string },
+    b?: Id,
+  ): Promise<ParsedTransactionInfo> {
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
+
+    const tx = await this.getTransaction(owner_id, tx_id);
+    // map TransactionDoc -> ParsedTransactionInfo
+    return {
+      date: tx.date,
+      merchant_text: tx.merchant_text,
+      amount: tx.amount,
+    };
   }
 }

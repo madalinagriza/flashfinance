@@ -2,6 +2,7 @@
 import { assertEquals, assertExists, assertRejects } from "jsr:@std/assert";
 import { testDb } from "@utils/database.ts";
 import CategoryConcept, { Id, Period } from "../CategoryConcept.ts"; // Adjust path if CategoryConcept.ts is not in the parent directory
+const TRASH_CATEGORY_ID = Id.from("TRASH_CATEGORY");
 
 Deno.test("CategoryConcept: create action works and enforces name uniqueness per owner", async () => {
   const [db, client] = await testDb();
@@ -16,10 +17,10 @@ Deno.test("CategoryConcept: create action works and enforces name uniqueness per
     console.log(
       `Attempting to create category "${categoryName}" for owner "${ownerId.toString()}"...`,
     );
-    const { category_id: createdCategoryId } = await store.create(
-      ownerId,
-      categoryName,
-    );
+    const { category_id: createdCategoryId } = await store.create({
+      owner_id: ownerId.toString(),
+      name: categoryName,
+    });
     assertExists(
       createdCategoryId,
       "A category ID should be returned upon successful creation.",
@@ -49,13 +50,34 @@ Deno.test("CategoryConcept: create action works and enforces name uniqueness per
     );
     console.log("   ✅ Verified: Category found with correct name and owner.");
 
+    console.log(
+      `   Verifying getCategoriesFromOwner for owner "${ownerId.toString()}"...`,
+    );
+    const ownerCategories = await store.getCategoriesFromOwner({
+      owner_id: ownerId.toString(),
+    });
+    assertEquals(
+      ownerCategories.length,
+      1,
+      "Should retrieve one category for the owner.",
+    );
+    assertEquals(
+      ownerCategories[0].toString(),
+      createdCategoryId.toString(),
+      "The retrieved category ID should match the created one.",
+    );
+    console.log("   ✅ Verified: getCategoriesFromOwner works correctly.");
+
     // 4. Action (Negative Test): Attempt to create a category with the same name for the same owner.
     console.log(
       `Attempting to create duplicate category "${categoryName}" for owner "${ownerId.toString()}"...`,
     );
     await assertRejects(
       async () => {
-        await store.create(ownerId, categoryName);
+        await store.create({
+          owner_id: ownerId.toString(),
+          name: categoryName,
+        });
       },
       Error,
       `Category with name "${categoryName}" already exists for owner ${ownerId.toString()}.`,
@@ -85,10 +107,10 @@ Deno.test("CategoryConcept: rename action works and enforces new name uniqueness
     console.log(
       `1. Creating initial category "${initialName}" for owner "${ownerId.toString()}"...`,
     );
-    const { category_id: categoryToRenameId } = await store.create(
-      ownerId,
-      initialName,
-    );
+    const { category_id: categoryToRenameId } = await store.create({
+      owner_id: ownerId.toString(),
+      name: initialName,
+    });
     assertExists(categoryToRenameId, "Initial category should be created.");
     console.log(
       `   ✅ Created category with ID: ${categoryToRenameId.toString()}`,
@@ -116,11 +138,11 @@ Deno.test("CategoryConcept: rename action works and enforces new name uniqueness
     console.log(
       `2. Renaming category "${initialName}" (ID: ${categoryToRenameId.toString()}) to "${newName}"...`,
     );
-    const { category_id: renamedCategoryId } = await store.rename(
-      ownerId,
-      categoryToRenameId,
-      newName,
-    );
+    const { category_id: renamedCategoryId } = await store.rename({
+      owner_id: ownerId.toString(),
+      category_id: categoryToRenameId.toString(),
+      new_name: newName,
+    });
     assertEquals(
       renamedCategoryId.toString(),
       categoryToRenameId.toString(),
@@ -166,17 +188,21 @@ Deno.test("CategoryConcept: rename action works and enforces new name uniqueness
       `\n4. Negative Test: Attempting to rename to an existing category name ("${anotherCategoryName}")...`,
     );
     // First, create another category
-    const { category_id: anotherCategoryId } = await store.create(
-      ownerId,
-      anotherCategoryName,
-    );
+    const { category_id: anotherCategoryId } = await store.create({
+      owner_id: ownerId.toString(),
+      name: anotherCategoryName,
+    });
     console.log(
       `   Created another category "${anotherCategoryName}" with ID: ${anotherCategoryId.toString()}`,
     );
 
     await assertRejects(
       async () => {
-        await store.rename(ownerId, categoryToRenameId, anotherCategoryName);
+        await store.rename({
+          owner_id: ownerId.toString(),
+          category_id: categoryToRenameId.toString(),
+          new_name: anotherCategoryName,
+        });
       },
       Error,
       `Category with name "${anotherCategoryName}" already exists for owner ${ownerId.toString()}.`,
@@ -193,7 +219,11 @@ Deno.test("CategoryConcept: rename action works and enforces new name uniqueness
     const nonExistentId = Id.from("non_existent_id");
     await assertRejects(
       async () => {
-        await store.rename(ownerId, nonExistentId, "Some truly new name");
+        await store.rename({
+          owner_id: ownerId.toString(),
+          category_id: nonExistentId.toString(),
+          new_name: "Some truly new name",
+        });
       },
       Error,
       `Category with ID "${nonExistentId.toString()}" not found for owner ${ownerId.toString()}.`,
@@ -205,11 +235,11 @@ Deno.test("CategoryConcept: rename action works and enforces new name uniqueness
 
     // --- Test: Rename to its own current name (should succeed and do nothing) ---
     console.log("\n6. Test: Renaming category to its own current name...");
-    const { category_id: renamedToSameId } = await store.rename(
-      ownerId,
-      categoryToRenameId,
-      newName,
-    );
+    const { category_id: renamedToSameId } = await store.rename({
+      owner_id: ownerId.toString(),
+      category_id: categoryToRenameId.toString(),
+      new_name: newName,
+    });
     assertEquals(
       renamedToSameId.toString(),
       categoryToRenameId.toString(),
@@ -249,10 +279,10 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
     console.log(
       `1. Creating category "${categoryNameToDelete}" for owner "${ownerId.toString()}"...`,
     );
-    const { category_id: categoryIdToDelete } = await store.create(
-      ownerId,
-      categoryNameToDelete,
-    );
+    const { category_id: categoryIdToDelete } = await store.create({
+      owner_id: ownerId.toString(),
+      name: categoryNameToDelete,
+    });
     assertExists(categoryIdToDelete, "Category to delete should be created.");
     console.log(`   ✅ Created category ID: ${categoryIdToDelete.toString()}`);
 
@@ -260,10 +290,10 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
     console.log(
       `2. Creating category "${categoryNameWithLabels}" for owner "${ownerId.toString()}"...`,
     );
-    const { category_id: categoryIdWithLabels } = await store.create(
-      ownerId,
-      categoryNameWithLabels,
-    );
+    const { category_id: categoryIdWithLabels } = await store.create({
+      owner_id: ownerId.toString(),
+      name: categoryNameWithLabels,
+    });
     assertExists(
       categoryIdWithLabels,
       "Category simulating labels should be created.",
@@ -297,11 +327,11 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
       `\n3. Attempting to delete category "${categoryNameToDelete}" (ID: ${categoryIdToDelete.toString()}) with has_labels_in_category = false...`,
     );
     // As per prompt, set has_labels_in_category to false for normal deletion
-    const { ok: deleteOk } = await store.delete(
-      ownerId,
-      categoryIdToDelete,
-      true,
-    );
+    const { ok: deleteOk } = await store.delete({
+      owner_id: ownerId.toString(),
+      category_id: categoryIdToDelete.toString(),
+      can_delete: true,
+    });
     assertEquals(deleteOk, true, "Deletion should return true.");
     console.log("   ✅ Delete action completed successfully.");
 
@@ -337,7 +367,11 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
     // As per prompt, set has_labels_in_category to true to simulate a category referenced by labels
     await assertRejects(
       async () => {
-        await store.delete(ownerId, categoryIdWithLabels, false);
+        await store.delete({
+          owner_id: ownerId.toString(),
+          category_id: categoryIdWithLabels.toString(),
+          can_delete: false,
+        });
       },
       Error,
       `Cannot delete category "${categoryIdWithLabels.toString()}" because it is referenced by existing labels.`,
@@ -369,7 +403,11 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
     await assertRejects(
       async () => {
         // has_labels_in_category value doesn't matter here as the category won't be found first
-        await store.delete(ownerId, nonExistentCategoryId, true);
+        await store.delete({
+          owner_id: ownerId.toString(),
+          category_id: nonExistentCategoryId.toString(),
+          can_delete: true,
+        });
       },
       Error,
       `Category with ID "${nonExistentCategoryId.toString()}" not found for owner ${ownerId.toString()}.`,
@@ -383,303 +421,218 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
     console.log("Database client closed.");
   }
 });
-Deno.test("CategoryConcept: CategoryMetrics actions (set, get, list, delete with category) work as expected", async () => {
+Deno.test("CategoryConcept: moveTransactionToTrash removes and reassigns metrics", async () => {
   const [db, client] = await testDb();
   const store = new CategoryConcept(db);
 
   try {
-    const ownerId = Id.from("test_user_metrics_1");
-    const categoryName1 = "Groceries Metrics";
-    const categoryName2 = "Utilities Metrics"; // For testing deletion impact
+    const ownerId = Id.from("metric_move_trash_owner");
+    const categoryName = "Dining";
+    const { category_id: sourceCategoryId } = await store.create({
+      owner_id: ownerId.toString(),
+      name: categoryName,
+    });
+    assertExists(sourceCategoryId, "Source category should be created.");
 
-    // 1. Setup: Create a category to associate metrics with
-    console.log(`\n--- Test CategoryMetrics Actions ---`);
-    console.log(
-      `1. Creating category "${categoryName1}" for owner "${ownerId.toString()}"...`,
-    );
-    const { category_id: categoryId1 } = await store.create(
-      ownerId,
-      categoryName1,
-    );
-    assertExists(categoryId1, "Category 1 should be created.");
-    console.log(`   ✅ Created category 1 with ID: ${categoryId1.toString()}`);
+    const txId = Id.from("tx_move_candidate");
+    const amount = 55.25;
+    const date = new Date("2024-02-15T00:00:00Z");
 
-    console.log(
-      `   Creating category "${categoryName2}" for owner "${ownerId.toString()}"...`,
-    );
-    const { category_id: categoryId2 } = await store.create(
-      ownerId,
-      categoryName2,
-    );
-    assertExists(categoryId2, "Category 2 should be created.");
-    console.log(`   ✅ Created category 2 with ID: ${categoryId2.toString()}`);
+    await store.addTransaction({
+      owner_id: ownerId.toString(),
+      category_id: sourceCategoryId.toString(),
+      tx_id: txId.toString(),
+      amount,
+      tx_date: date,
+    });
 
-    // Define periods
-    const periodJan = Period.from(
-      new Date("2023-01-01"),
-      new Date("2023-01-31"),
-    );
-    const periodFeb = Period.from(
-      new Date("2023-02-01"),
-      new Date("2023-02-28"),
-    );
-    const periodMar = Period.from(
-      new Date("2023-03-01"),
-      new Date("2023-03-31"),
-    );
+    const moveResult = await store.moveTransactionToTrash({
+      owner_id: ownerId.toString(),
+      from_category_id: sourceCategoryId.toString(),
+      tx_id: txId.toString(),
+    });
+    assertEquals(moveResult.ok, true, "Move operation should succeed.");
 
-    // --- (1) Creating a category and calling setMetricTotal(..., 0) succeeds and allows retrieval ---
-    console.log(
-      `\n2. Setting metric total for ${categoryName1} (Jan) to 0...`,
-    );
-    const setMetricResult1 = await store.setMetricTotal(
-      ownerId,
-      categoryId1,
-      periodJan,
-      0,
-    );
-    assertEquals(setMetricResult1.ok, true, "setMetricTotal should succeed.");
-    console.log("   ✅ Metric set to 0 successfully.");
+    const remaining = await store.listTransactions({
+      owner_id: ownerId.toString(),
+      category_id: sourceCategoryId.toString(),
+    });
+    assertEquals(remaining.length, 0, "Source category should no longer list the transaction.");
 
-    console.log(`   Retrieving metric for ${categoryName1} (Jan)...`);
-    const retrievedMetric1 = await store.getMetric(
-      ownerId,
-      categoryId1,
-      periodJan,
-    );
-    assertExists(retrievedMetric1, "Metric should be retrievable.");
+    const trashTransactions = await store.listTransactions({
+      owner_id: ownerId.toString(),
+      category_id: TRASH_CATEGORY_ID.toString(),
+    });
+    assertEquals(trashTransactions.length, 1, "Trash category should contain the moved transaction.");
+    assertEquals(trashTransactions[0].tx_id, txId.toString(), "Transaction ID should match after move.");
+    assertEquals(trashTransactions[0].amount, amount, "Amount should be preserved when moving to trash.");
     assertEquals(
-      retrievedMetric1.current_total,
-      0,
-      "Retrieved metric total should be 0.",
+      new Date(trashTransactions[0].tx_date).toISOString(),
+      date.toISOString(),
+      "Transaction date should be preserved when moving to trash.",
     );
-    assertEquals(
-      retrievedMetric1.owner_id,
-      ownerId.toString(),
-      "Owner ID should match.",
-    );
-    assertEquals(
-      retrievedMetric1.category_id,
-      categoryId1.toString(),
-      "Category ID should match.",
-    );
-    assertEquals(
-      retrievedMetric1.period_start.toISOString(),
-      periodJan.startDate.toISOString(),
-      "Period start should match.",
-    );
-    assertEquals(
-      retrievedMetric1.period_end.toISOString(),
-      periodJan.endDate.toISOString(),
-      "Period end should match.",
-    );
-    console.log("   ✅ Metric retrieved with current_total = 0.");
 
-    // --- (2) Calling setMetricTotal again with a new total updates the same metric ---
-    console.log(
-      `\n3. Updating metric total for ${categoryName1} (Jan) to 150.75...`,
+    const categories = await store.getCategoryNamesAndOwners();
+    const trashCategory = categories.find((c) =>
+      c.owner_id.toString() === ownerId.toString() && c.category_id === TRASH_CATEGORY_ID.toString()
     );
-    const setMetricResult2 = await store.setMetricTotal(
-      ownerId,
-      categoryId1,
-      periodJan,
-      150.75,
-    );
-    assertEquals(setMetricResult2.ok, true, "setMetricTotal should succeed.");
-    console.log("   ✅ Metric updated to 150.75 successfully.");
+    assertExists(trashCategory, "Trash category record should exist for the owner once a transaction is moved.");
+    assertEquals(trashCategory.name, "Trash", "Trash category should have the canonical name 'Trash'.");
+  } finally {
+    await client.close(true);
+  }
+});
+Deno.test("CategoryConcept: metric transaction tracking and stats work", async () => {
+  const [db, client] = await testDb();
+  const store = new CategoryConcept(db);
 
-    console.log(`   Retrieving updated metric for ${categoryName1} (Jan)...`);
-    const retrievedMetric2 = await store.getMetric(
-      ownerId,
-      categoryId1,
-      periodJan,
-    );
-    assertExists(retrievedMetric2, "Updated metric should be retrievable.");
+  try {
+    const ownerId = Id.from("metric_user_1");
+    const categoryName = "Travel Metrics";
+    const { category_id } = await store.create({
+      owner_id: ownerId.toString(),
+      name: categoryName,
+    });
+    assertExists(category_id, "Category should be created for metric testing.");
+
+    const txId1 = Id.from("metric_tx_1");
+    const txId2 = Id.from("metric_tx_2");
+
+    await store.addTransaction({
+      owner_id: ownerId.toString(),
+      category_id: category_id.toString(),
+      tx_id: txId1.toString(),
+      amount: 120.5,
+      tx_date: new Date("2023-04-05"),
+    });
+
+    await store.addTransaction({
+      owner_id: ownerId.toString(),
+      category_id: category_id.toString(),
+      tx_id: txId2.toString(),
+      amount: 40,
+      tx_date: new Date("2023-04-07"),
+    });
+
+    const transactions = await store.listTransactions(ownerId, category_id);
     assertEquals(
-      retrievedMetric2.current_total,
-      150.75,
-      "Retrieved metric total should be the new total (150.75).",
-    );
-    console.log("   ✅ Metric successfully updated.");
-
-    // Verify no duplicates by listing all metrics for the category (should still only be 1 for Jan)
-    const metricsListAfterUpdate = await store.listMetrics(
-      ownerId,
-      categoryId1,
+      transactions.length,
+      2,
+      "Two transactions should be recorded.",
     );
     assertEquals(
-      metricsListAfterUpdate.length,
+      transactions.map((t) => t.tx_id).sort(),
+      [txId1.toString(), txId2.toString()].sort(),
+      "Transaction IDs should match the added ones.",
+    );
+
+    const april = Period.from(
+      new Date("2023-04-01"),
+      new Date("2023-04-30"),
+    );
+    const stats = await store.getMetricStats({
+      owner_id: ownerId.toString(),
+      category_id: category_id.toString(),
+      period: april,
+    });
+    assertEquals(
+      stats.transaction_count,
+      2,
+      "Stats should report two transactions.",
+    );
+    assertEquals(
+      stats.total_amount,
+      160.5,
+      "Total amount should sum recorded values.",
+    );
+    assertEquals(
+      stats.average_per_day,
+      stats.total_amount / stats.days,
+      "Average per day should be derived from total/days.",
+    );
+
+    // Duplicate transaction should be rejected
+    await assertRejects(
+      async () => {
+        await store.addTransaction({
+          owner_id: ownerId.toString(),
+          category_id: category_id.toString(),
+          tx_id: txId1.toString(),
+          amount: 10,
+          tx_date: new Date("2023-04-08"),
+        });
+      },
+      Error,
+      "already recorded",
+      "Adding the same tx_id twice should fail.",
+    );
+
+    // Removing a transaction should update the bucket
+    await store.removeTransaction({
+      owner_id: ownerId.toString(),
+      category_id: category_id.toString(),
+      tx_id: txId1.toString(),
+    });
+    const remaining = await store.listTransactions({
+      owner_id: ownerId.toString(),
+      category_id: category_id.toString(),
+    });
+    assertEquals(
+      remaining.length,
       1,
-      "There should only be one metric for category1 despite two setMetricTotal calls for the same period.",
+      "Only one transaction should remain after removal.",
     );
     assertEquals(
-      metricsListAfterUpdate[0].current_total,
-      150.75,
-      "The single metric should have the updated total.",
-    );
-    console.log(
-      "   ✅ Verified: Update did not create a duplicate; existing metric was updated.",
+      remaining[0].tx_id,
+      txId2.toString(),
+      "Remaining transaction should be txId2.",
     );
 
-    // --- (3) listMetrics(owner, category) returns all metrics sorted by period_start ascending ---
-    console.log(
-      `\n4. Adding more metrics for ${categoryName1} for sorting test...`,
-    );
-    await store.setMetricTotal(ownerId, categoryId1, periodMar, 300.00); // Set March first
-    await store.setMetricTotal(ownerId, categoryId1, periodFeb, 200.50); // Then February
-
-    console.log(`   Listing all metrics for ${categoryName1}...`);
-    const allMetrics = await store.listMetrics(ownerId, categoryId1);
-
+    const statsAfterRemoval = await store.getMetricStats({
+      owner_id: ownerId.toString(),
+      category_id: category_id.toString(),
+      period: april,
+    });
     assertEquals(
-      allMetrics.length,
-      3,
-      "Should have 3 metrics now (Jan, Feb, Mar).",
-    );
-
-    // Assert sorting by period_start ascending
-    assertEquals(
-      allMetrics[0].period_start.toISOString(),
-      periodJan.startDate.toISOString(),
-      "First metric should be January.",
+      statsAfterRemoval.transaction_count,
+      1,
+      "Stats should reflect single transaction now.",
     );
     assertEquals(
-      allMetrics[0].current_total,
-      150.75,
-      "January metric total should be correct.",
+      statsAfterRemoval.total_amount,
+      40,
+      "Total should reflect remaining transaction amount.",
     );
 
-    assertEquals(
-      allMetrics[1].period_start.toISOString(),
-      periodFeb.startDate.toISOString(),
-      "Second metric should be February.",
-    );
-    assertEquals(
-      allMetrics[1].current_total,
-      200.50,
-      "February metric total should be correct.",
-    );
-
-    assertEquals(
-      allMetrics[2].period_start.toISOString(),
-      periodMar.startDate.toISOString(),
-      "Third metric should be March.",
-    );
-    assertEquals(
-      allMetrics[2].current_total,
-      300.00,
-      "March metric total should be correct.",
-    );
-    console.log(
-      "   ✅ Verified: listMetrics returns all metrics sorted by period_start ascending.",
-    );
-
-    // --- Error Cases ---
-    console.log(`\n5. Testing error cases for setMetricTotal...`);
-    // Negative total
-    console.log(`   Attempting to set a negative metric total...`);
     await assertRejects(
       async () => {
-        await store.setMetricTotal(ownerId, categoryId1, periodJan, -50);
+        await store.removeTransaction({
+          owner_id: ownerId.toString(),
+          category_id: category_id.toString(),
+          tx_id: txId1.toString(),
+        });
       },
       Error,
-      "Metric update failed: total must be nonnegative.",
-      "Should reject setting a negative total.",
-    );
-    console.log("   ✅ Verified: Setting negative total rejected.");
-
-    // Non-existent category
-    const nonExistentCategoryId = Id.from("non_existent_category_for_metrics");
-    console.log(`   Attempting to set metric for a non-existent category...`);
-    await assertRejects(
-      async () => {
-        await store.setMetricTotal(
-          ownerId,
-          nonExistentCategoryId,
-          periodJan,
-          100,
-        );
-      },
-      Error,
-      "Metric update failed: Category not found.",
-      "Should reject setting metric for a non-existent category.",
-    );
-    console.log(
-      "   ✅ Verified: Setting metric for non-existent category rejected.",
+      "not recorded",
+      "Removing a missing transaction should throw.",
     );
 
-    // --- (4) Deleting a category removes both the category and all associated metrics ---
-    // First, add a metric to categoryId2 to ensure it's not affected by categoryId1's deletion
-    console.log(`\n6. Setting a metric for ${categoryName2} (Jan) to 50.00...`);
-    await store.setMetricTotal(ownerId, categoryId2, periodJan, 50.00);
-    const metricForCategory2 = await store.getMetric(
-      ownerId,
-      categoryId2,
-      periodJan,
-    );
-    assertExists(metricForCategory2, "Metric for category2 should exist.");
-    assertEquals(
-      metricForCategory2.current_total,
-      50.00,
-      "Metric for category2 total should be 50.00.",
-    );
-    console.log("   ✅ Metric set for Category 2.");
-
-    console.log(
-      `   Deleting category "${categoryName1}" (ID: ${categoryId1.toString()}) along with its metrics...`,
-    );
-    const deleteResult = await store.delete(ownerId, categoryId1, true);
+    // Deleting the category should remove its metric bucket
+    const deleteResult = await store.delete({
+      owner_id: ownerId.toString(),
+      category_id: category_id.toString(),
+      can_delete: true,
+    });
     assertEquals(deleteResult.ok, true, "Category deletion should succeed.");
-    console.log("   ✅ Category 1 deleted successfully.");
 
-    // Verify category1 and its metrics are gone
-    const categoriesAfterDelete = await store.getCategoryNamesAndOwners();
+    const postDeleteTransactions = await store.listTransactions({
+      owner_id: ownerId.toString(),
+      category_id: category_id.toString(),
+    });
     assertEquals(
-      categoriesAfterDelete.some((c) => c.name === categoryName1),
-      false,
-      "Deleted category1 should no longer exist.",
-    );
-    const metricsAfterDelete = await store.listMetrics(ownerId, categoryId1);
-    assertEquals(
-      metricsAfterDelete.length,
+      postDeleteTransactions.length,
       0,
-      "All metrics associated with deleted category1 should be removed.",
-    );
-    const getMetricAfterDelete = await store.getMetric(
-      ownerId,
-      categoryId1,
-      periodJan,
-    );
-    assertEquals(
-      getMetricAfterDelete,
-      null,
-      "Attempting to get a metric for a deleted category should return null.",
-    );
-    console.log(
-      "   ✅ Verified: Category 1 and all its associated metrics are removed.",
-    );
-
-    // Verify category2 and its metrics are still present
-    const category2StillExists = categoriesAfterDelete.some((c) =>
-      c.name === categoryName2
-    );
-    assertEquals(category2StillExists, true, "Category 2 should still exist.");
-    const metricForCategory2AfterDelete = await store.getMetric(
-      ownerId,
-      categoryId2,
-      periodJan,
-    );
-    assertExists(
-      metricForCategory2AfterDelete,
-      "Metric for category2 should still exist after category1 deletion.",
-    );
-    assertEquals(
-      metricForCategory2AfterDelete.current_total,
-      50.00,
-      "Metric for category2 total should be unchanged.",
-    );
-    console.log(
-      "   ✅ Verified: Category 2 and its metrics are untouched by Category 1 deletion.",
+      "Metric bucket should be cleared after category deletion.",
     );
   } finally {
     await client.close(true);

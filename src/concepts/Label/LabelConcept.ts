@@ -1,6 +1,8 @@
 // deno-lint-ignore no-unversioned-import
 import { Collection, Db } from "npm:mongodb";
-import { GeminiLLM } from "./gemini-llm.ts";
+import { Config, GeminiLLM } from "./gemini-llm.ts";
+import rawCfg from "../../../config.json" with { type: "json" };
+const config: Config = rawCfg as Config;
 
 export class Id {
   private constructor(private value: string) {}
@@ -57,12 +59,14 @@ export default class LabelConcept {
   private txInfos: Collection<TxInfoDoc>;
   private catTx: Collection<CatTxDoc>;
   private stagedLabels: Collection<StagedLabelDoc>;
+  private llm: GeminiLLM;
 
   constructor(private readonly db: Db) {
     this.labels = db.collection(PREFIX + "labels");
     this.txInfos = db.collection(PREFIX + "tx_infos");
     this.catTx = db.collection(PREFIX + "cat_tx");
     this.stagedLabels = db.collection(PREFIX + "staged_labels");
+    this.llm = new GeminiLLM(config);
   }
   private makeTxUserId(user_id: Id, tx_id: Id): string {
     return `${user_id.toString()}:${tx_id.toString()}`;
@@ -124,19 +128,19 @@ export default class LabelConcept {
     category_id: Id,
   ): Promise<{ label_tx_id: Id }>;
   async stage(payload: {
-    user_id: Id;
-    tx_id: Id;
+    user_id: string;
+    tx_id: string;
     tx_name: string;
     tx_merchant: string;
-    category_id: Id;
+    category_id: string;
   }): Promise<{ label_tx_id: Id }>;
   async stage(
     a: Id | {
-      user_id: Id;
-      tx_id: Id;
+      user_id: string;
+      tx_id: string;
       tx_name: unknown;
       tx_merchant: unknown;
-      category_id: Id;
+      category_id: string;
     },
     b?: Id,
     c?: string,
@@ -144,14 +148,15 @@ export default class LabelConcept {
     e?: Id,
   ): Promise<{ label_tx_id: Id }> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
-    const tx_id = a instanceof Id ? b! : a.tx_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
     const tx_name = a instanceof Id ? String(c) : String(a.tx_name);
     const tx_merchant = a instanceof Id ? String(d) : String(a.tx_merchant);
-    const category_id = a instanceof Id ? e! : a.category_id;
+    const category_id = a instanceof Id ? e! : Id.from(a.category_id);
 
     // requires: no committed label exists for `tx_id`; no stagedLabel with ID tx_id.
     const txIdStr = tx_id.toString();
+    console.log(typeof user_id);
     const userIdStr = user_id.toString();
     const stagedId = this.makeTxUserId(user_id, tx_id);
 
@@ -189,11 +194,57 @@ export default class LabelConcept {
     return { label_tx_id: tx_id };
   }
 
+  /**
+   * Creates a staged label that assigns the transaction to the Trash category.
+   * Signature mirrors `stage` and delegates to it, so all validation is centralized.
+   */
+  async discard(
+    user_id: Id,
+    tx_id: Id,
+    tx_name: string,
+    tx_merchant: string,
+  ): Promise<{ label_tx_id: Id }>;
+  async discard(payload: {
+    user_id: string;
+    tx_id: string;
+    tx_name?: string;
+    tx_merchant?: string;
+  }): Promise<{ label_tx_id: Id }>;
+  async discard(
+    a:
+      | Id
+      | {
+        user_id: string;
+        tx_id: string;
+        tx_name?: unknown;
+        tx_merchant?: unknown;
+      },
+    b?: Id,
+    c?: string,
+    d?: string,
+  ): Promise<{ label_tx_id: Id }> {
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
+    const tx_name = a instanceof Id ? String(c) : String(a.tx_name ?? "");
+    const tx_merchant = a instanceof Id
+      ? String(d)
+      : String(a.tx_merchant ?? "");
+
+    // Delegate to stage by passing a single payload object, which it expects.
+    return await this.stage({
+      user_id: user_id.toString(),
+      tx_id: tx_id.toString(),
+      tx_name,
+      tx_merchant,
+      category_id: TRASH_CATEGORY_ID.toString(),
+    });
+  }
+
   async finalize(user_id: Id): Promise<void>;
-  async finalize(payload: { user_id: Id }): Promise<void>;
-  async finalize(a: Id | { user_id: Id }): Promise<void> {
+  async finalize(payload: { user_id: string }): Promise<void>;
+  async finalize(a: Id | { user_id: string }): Promise<void> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
 
     const userIdStr = user_id.toString();
 
@@ -246,10 +297,10 @@ export default class LabelConcept {
    * @param user_id The ID of the user whose staged labels are to be cancelled.
    */
   async cancel(user_id: Id): Promise<void>;
-  async cancel(payload: { user_id: Id }): Promise<void>;
-  async cancel(a: Id | { user_id: Id }): Promise<void> {
+  async cancel(payload: { user_id: string }): Promise<void>;
+  async cancel(a: Id | { user_id: string }): Promise<void> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
 
     // effects: deletes all StagedLabels for that user;
     await this.stagedLabels.deleteMany({ user_id: user_id.toString() });
@@ -262,19 +313,19 @@ export default class LabelConcept {
     new_category_id: Id,
   ): Promise<{ label_tx_id: Id }>;
   async update(payload: {
-    user_id: Id;
-    tx_id: Id;
-    new_category_id: Id;
+    user_id: string;
+    tx_id: string;
+    new_category_id: string;
   }): Promise<{ label_tx_id: Id }>;
   async update(
-    a: Id | { user_id: Id; tx_id: Id; new_category_id: Id },
+    a: Id | { user_id: string; tx_id: string; new_category_id: string },
     b?: Id,
     c?: Id,
   ): Promise<{ label_tx_id: Id }> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
-    const tx_id = a instanceof Id ? b! : a.tx_id;
-    const new_category_id = a instanceof Id ? c! : a.new_category_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
+    const new_category_id = a instanceof Id ? c! : Id.from(a.new_category_id);
 
     const keycombined = this.makeTxUserId(user_id, tx_id);
     const now = new Date();
@@ -312,15 +363,15 @@ export default class LabelConcept {
   /** Reassign the label for a transaction to the built-in Trash category. */
   async remove(user_id: Id, tx_id: Id): Promise<{ label_tx_id: Id }>;
   async remove(
-    payload: { user_id: Id; tx_id: Id },
+    payload: { user_id: string; tx_id: string },
   ): Promise<{ label_tx_id: Id }>;
   async remove(
-    a: Id | { user_id: Id; tx_id: Id },
+    a: Id | { user_id: string; tx_id: string },
     b?: Id,
   ): Promise<{ label_tx_id: Id }> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
-    const tx_id = a instanceof Id ? b! : a.tx_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
 
     await this.update(user_id, tx_id, TRASH_CATEGORY_ID);
     return { label_tx_id: tx_id };
@@ -328,48 +379,41 @@ export default class LabelConcept {
 
   /** Queries for demos/tests. */
   async getLabel(user_id: Id, tx_id: Id): Promise<LabelDoc | null>;
-  async getLabel(payload: { user_id: Id; tx_id: Id }): Promise<LabelDoc | null>;
   async getLabel(
-    a: Id | { user_id: Id; tx_id: Id },
+    payload: { user_id: string; tx_id: string },
+  ): Promise<LabelDoc | null>;
+  async getLabel(
+    a: Id | { user_id: string; tx_id: string },
     b?: Id,
   ): Promise<LabelDoc | null> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
-    const tx_id = a instanceof Id ? b! : a.tx_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
 
     return await this.labels.findOne({
       _id: this.makeTxUserId(user_id, tx_id),
     });
   }
-
-  async getTxInfo(user_id: Id, tx_id: Id): Promise<TxInfoDoc | null>;
-  async getTxInfo(
-    payload: { user_id: Id; tx_id: Id },
-  ): Promise<TxInfoDoc | null>;
-  async getTxInfo(
-    a: Id | { user_id: Id; tx_id: Id },
-    b?: Id,
-  ): Promise<TxInfoDoc | null> {
-    // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
-    const tx_id = a instanceof Id ? b! : a.tx_id;
-
+  async getTxInfo(user_id: Id, tx_id: Id) {
     return await this.txInfos.findOne({
       _id: this.makeTxUserId(user_id, tx_id),
     });
   }
 
-  async getCategoryHistory(user_id: Id, category_id: Id): Promise<string[]>;
   async getCategoryHistory(
-    payload: { user_id: Id; category_id: Id },
+    user_id: Id,
+    category_id: Id,
   ): Promise<string[]>;
   async getCategoryHistory(
-    a: Id | { user_id: Id; category_id: Id },
+    payload: { user_id: string; category_id: string },
+  ): Promise<string[]>;
+  async getCategoryHistory(
+    a: Id | { user_id: string; category_id: string },
     b?: Id,
   ): Promise<string[]> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
-    const category_id = a instanceof Id ? b! : a.category_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
 
     const rows = await this.catTx.find({
       category_id: category_id.toString(),
@@ -380,8 +424,52 @@ export default class LabelConcept {
     return rows.map((r) => r.tx_id);
   }
 
+  /**
+   * Backwards-compatible helper: returns all tx_ids for a user/category.
+   * Matches the requested get_category_tx name.
+   */
+  async get_category_tx(user_id: Id, category_id: Id): Promise<string[]>;
+  async get_category_tx(
+    payload: { user_id: string; category_id: string },
+  ): Promise<string[]>;
+  async get_category_tx(
+    a: Id | { user_id: string; category_id: string },
+    b?: Id,
+  ): Promise<string[]> {
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
+    return await this.getCategoryHistory(user_id, category_id);
+  }
+
+  /**
+   * Returns all tx_ids currently in the Trash category for a given user.
+   * Delegates to `get_category_tx` with the built-in TRASH_CATEGORY_ID.
+   */
+  async get_tx_in_trash(user_id: Id): Promise<string[]>;
+  async get_tx_in_trash(payload: { user_id: string }): Promise<string[]>;
+  async get_tx_in_trash(a: Id | { user_id: string }): Promise<string[]> {
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    return await this.get_category_tx(user_id, TRASH_CATEGORY_ID);
+  }
+
   async all(): Promise<LabelDoc[]> {
     return await this.labels.find().toArray();
+  }
+
+  /**
+   * Returns all staged (not-yet-committed) labels for a given user.
+   * @param user_id The ID of the user whose staged labels to fetch.
+   */
+  async getStagedLabels(user_id: Id): Promise<StagedLabelDoc[]>;
+  async getStagedLabels(
+    payload: { user_id: string },
+  ): Promise<StagedLabelDoc[]>;
+  async getStagedLabels(
+    a: Id | { user_id: string },
+  ): Promise<StagedLabelDoc[]> {
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    return await this.stagedLabels.find({ user_id: user_id.toString() })
+      .toArray();
   }
 
   async hasAnyLabelsForCategory(
@@ -389,15 +477,15 @@ export default class LabelConcept {
     category_id: Id,
   ): Promise<boolean>;
   async hasAnyLabelsForCategory(
-    payload: { user_id: Id; category_id: Id },
+    payload: { user_id: string; category_id: string },
   ): Promise<boolean>;
   async hasAnyLabelsForCategory(
-    a: Id | { user_id: Id; category_id: Id },
+    a: Id | { user_id: string; category_id: string },
     b?: Id,
   ): Promise<boolean> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
-    const category_id = a instanceof Id ? b! : a.category_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    const category_id = a instanceof Id ? b! : Id.from(a.category_id);
 
     const count = await this.catTx.countDocuments({
       user_id: user_id.toString(),
@@ -408,33 +496,38 @@ export default class LabelConcept {
 
   // more info about the transaction
   async suggest(
-    llm: GeminiLLM,
     user_id: Id,
     allCategories: [string, Id][],
     txInfo: TransactionInfo,
   ): Promise<CategoryMeta>;
   async suggest(payload: {
-    llm: GeminiLLM;
-    user_id: Id;
-    allCategories: [string, Id][];
-    txInfo: TransactionInfo;
+    user_id: string;
+    allCategories: [string, string][];
+    txInfo: { tx_id: string; tx_name: string; tx_merchant: string };
   }): Promise<CategoryMeta>;
   async suggest(
-    a: GeminiLLM | {
-      llm: GeminiLLM;
-      user_id: Id;
-      allCategories: [string, Id][];
-      txInfo: TransactionInfo;
-    },
-    b?: Id,
-    c?: [string, Id][],
-    d?: TransactionInfo,
+    a:
+      | Id
+      | {
+        user_id: string;
+        allCategories: [string, string][];
+        txInfo: { tx_id: string; tx_name: string; tx_merchant: string };
+      },
+    b?: [string, Id][],
+    c?: TransactionInfo,
   ): Promise<CategoryMeta> {
-    // narrow both styles
-    const llm = a instanceof GeminiLLM ? a : a.llm;
-    const user_id = a instanceof GeminiLLM ? b! : a.user_id;
-    const allCategories = a instanceof GeminiLLM ? c! : a.allCategories;
-    const txInfo = a instanceof GeminiLLM ? d! : a.txInfo;
+    // narrow both styles (use this.llm instead of accepting an llm param)
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
+    const allCategories = a instanceof Id
+      ? b!
+      : a.allCategories.map(([name, id]) =>
+        [name, Id.from(id)] as [string, Id]
+      );
+    const txInfo = a instanceof Id ? c! : {
+      tx_id: Id.from(a.txInfo.tx_id),
+      tx_name: a.txInfo.tx_name,
+      tx_merchant: a.txInfo.tx_merchant,
+    };
 
     console.log("🤖 Requesting labeling suggestions from Gemini AI...");
     if (allCategories.length === 0) {
@@ -460,7 +553,7 @@ export default class LabelConcept {
         historyByCategory,
       );
 
-      const text = await llm.executeLLM(prompt);
+      const text = await this.llm.executeLLM(prompt);
 
       const chosen = this.parseFindSuggestResponse(text, categories);
       console.log("✅ Received response from Gemini AI!\n");

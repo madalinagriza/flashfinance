@@ -106,7 +106,9 @@ export default class UserConcept {
    */
 
   async register(email: string, name: string, password: string): Promise<User>;
-  async register(payload: { email: string; name: string; password: string }): Promise<User>;
+  async register(
+    payload: { email: string; name: string; password: string },
+  ): Promise<User>;
   async register(
     a: string | { email: unknown; name: unknown; password: unknown },
     b?: string,
@@ -116,7 +118,7 @@ export default class UserConcept {
     const email = typeof a === "object" ? String(a.email) : a;
     const name = typeof a === "object" ? String(a.name) : String(b);
     const password = typeof a === "object" ? String(a.password) : String(c);
-  if (
+    if (
       typeof email !== "string" ||
       typeof name !== "string" ||
       typeof password !== "string"
@@ -166,7 +168,9 @@ export default class UserConcept {
     }));
   }
   async authenticate(email: string, password: string): Promise<User>;
-  async authenticate(payload: { email: string; password: string }): Promise<User>;
+  async authenticate(
+    payload: { email: string; password: string },
+  ): Promise<User>;
   async authenticate(
     a: string | { email: unknown; password: unknown },
     b?: string,
@@ -206,10 +210,10 @@ export default class UserConcept {
   }
 
   async deactivate(user_id: Id): Promise<void>;
-  async deactivate(payload: { user_id: Id }): Promise<void>;
-  async deactivate(a: Id | { user_id: Id }): Promise<void> {
+  async deactivate(payload: { user_id: string }): Promise<void>;
+  async deactivate(a: Id | { user_id: string }): Promise<void> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
 
     // requires: a user with user_id exists
     const result = await this.users.updateOne(
@@ -226,20 +230,39 @@ export default class UserConcept {
     // effects: sets the user's status to INACTIVE
     // (This is implicitly handled by the updateOne call if matchedCount > 0)
   }
+  /**
+   * Returns true if the user with the given user_id is ACTIVE, false otherwise.
+   */
+  async is_active(email: string, password: string): Promise<boolean>;
+  async is_active(
+    payload: { email: string; password: string },
+  ): Promise<boolean>;
+  async is_active(
+    a: string | { email: unknown; password: unknown },
+    b?: string,
+  ): Promise<boolean> {
+    // narrow both styles
+    const email = typeof a === "object" ? String(a.email) : a;
+    const password = typeof a === "object" ? String(a.password) : String(b);
+    const user = await this.authenticate(email, password);
+    return user.status === UserStatus.ACTIVE;
+  }
 
   async changePassword(
     user_id: Id,
     old_password: string,
     new_password: string,
   ): Promise<boolean>;
-  async changePassword(payload: { user_id: Id; old_password: string; new_password: string }): Promise<boolean>;
   async changePassword(
-    a: Id | { user_id: Id; old_password: unknown; new_password: unknown },
+    payload: { user_id: string; old_password: string; new_password: string },
+  ): Promise<boolean>;
+  async changePassword(
+    a: Id | { user_id: string; old_password: unknown; new_password: unknown },
     b?: string,
     c?: string,
   ): Promise<boolean> {
     // narrow both styles
-    const user_id = a instanceof Id ? a : a.user_id;
+    const user_id = a instanceof Id ? a : Id.from(a.user_id);
     const old_password = a instanceof Id ? String(b) : String(a.old_password);
     const new_password = a instanceof Id ? String(c) : String(a.new_password);
 
@@ -270,14 +293,18 @@ export default class UserConcept {
   }
 
   async reactivate(email: string, new_password: string): Promise<boolean>;
-  async reactivate(payload: { email: string; new_password: string }): Promise<boolean>;
+  async reactivate(
+    payload: { email: string; new_password: string },
+  ): Promise<boolean>;
   async reactivate(
     a: string | { email: unknown; new_password: unknown },
     b?: string,
   ): Promise<boolean> {
     // narrow both styles
     const email = typeof a === "object" ? String(a.email) : a;
-    const new_password = typeof a === "object" ? String(a.new_password) : String(b);
+    const new_password = typeof a === "object"
+      ? String(a.new_password)
+      : String(b);
 
     // requires: a user with this email exists and status = INACTIVE
     const normalizedEmail = email.trim().toLowerCase();
