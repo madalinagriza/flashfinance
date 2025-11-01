@@ -1,5 +1,4 @@
-// deno-lint-ignore no-unversioned-import
-import { Collection, Db } from "npm:mongodb";
+import { Collection, Db } from "mongodb";
 
 // Id class copied from LabelConcept.ts as per instructions
 export class Id {
