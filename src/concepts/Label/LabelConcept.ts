@@ -1,8 +1,27 @@
 // deno-lint-ignore no-unversioned-import
 import { Collection, Db } from "npm:mongodb";
 import { Config, GeminiLLM } from "./gemini-llm.ts";
-import rawCfg from "../../../config.json" with { type: "json" };
-const config: Config = rawCfg as Config;
+
+// Load Gemini API key from environment if available; otherwise try to load
+// a local `config.json`. We avoid hard-failing at build time on missing
+// file by preferring the environment variable, which is the correct
+// approach for deployed environments (secrets via env).
+let config: Config;
+const envApiKey = Deno.env.get("GEMINI_API_KEY");
+if (envApiKey) {
+  config = { apiKey: envApiKey };
+} else {
+  try {
+    // Try to read a local config.json file relative to this module.
+    const cfgUrl = new URL("../../../config.json", import.meta.url);
+    const rawText = await Deno.readTextFile(cfgUrl);
+    config = JSON.parse(rawText) as Config;
+  } catch (_err) {
+    throw new Error(
+      "Missing Gemini configuration: set GEMINI_API_KEY env var or provide config.json",
+    );
+  }
+}
 
 export class Id {
   private constructor(private value: string) {}
