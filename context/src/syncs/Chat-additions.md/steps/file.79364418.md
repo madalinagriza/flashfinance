@@ -1,3 +1,12 @@
+---
+timestamp: 'Fri Nov 07 2025 12:09:49 GMT-0500 (Eastern Standard Time)'
+parent: '[[..\20251107_120949.0e22a58b.md]]'
+content_id: 79364418fea77c0b566df952b4daa6ceab3c1e6a129ec0fd6494e05fcf436170
+---
+
+# file: src\syncs\label.sync.ts
+
+```typescript
 import { actions, Frames, Sync } from "@engine";
 import {
   Category,
@@ -556,36 +565,6 @@ export const RemoveCommittedLabelRequest: Sync = (
   then: actions([Label.removeCommittedLabel, { user_id: user, tx_id }]),
 });
 
-/**
- * When a committed label is "removed" (moved to trash), this sync ensures the
- * corresponding transaction is also moved from its old category to the trash
- * category within the Category concept's metrics. This keeps the two concepts in sync.
- */
-export const MoveTransactionToTrashOnLabelRemove: Sync = (
-  { user_id, tx_id, old_category_id },
-) => ({
-  when: actions(
-    // This action now returns old_category_id, which can be null.
-    [Label.removeCommittedLabel, { user_id, tx_id }, {
-      label_tx_id: tx_id,
-      old_category_id,
-    }],
-  ),
-  where: async (frames) => {
-    // Only proceed if an actual category change happened (old_category_id is not null).
-    return frames.filter((frame) => frame[old_category_id] !== null);
-  },
-  then: actions(
-    [Category.moveTransactionToTrash, {
-      owner_id: user_id,
-      from_category_id: old_category_id,
-      tx_id,
-    }],
-  ),
-});
-
-
-
 export const RemoveCommittedLabelResponseSuccess: Sync = (
   { request, label_tx_id },
 ) => ({
@@ -645,3 +624,5 @@ export const GetLabelRequest: Sync = (
   },
   then: actions([Requesting.respond, { request, label, error }]),
 });
+
+```

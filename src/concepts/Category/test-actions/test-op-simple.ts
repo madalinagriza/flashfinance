@@ -631,7 +631,6 @@ Deno.test({
     const remaining = await store.listTransactions({
       owner_id: ownerId.toString(),
       category_id: category_id.toString(),
-      includeAll: true,
     });
     assertEquals(
       remaining.length,
@@ -699,7 +698,6 @@ Deno.test({
     const postDeleteTransactions = await store.listTransactions({
       owner_id: ownerId.toString(),
       category_id: category_id.toString(),
-      includeAll: true,
     });
     assertEquals(
       postDeleteTransactions.length,

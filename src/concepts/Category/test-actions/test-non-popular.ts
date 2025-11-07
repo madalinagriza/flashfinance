@@ -47,7 +47,6 @@ Deno.test("CategoryConcept: renaming a category preserves recorded metric transa
     const transactionsBeforeRename = await store.listTransactions(
       ownerId,
       categoryId,
-      { includeAll: true },
     );
     assertEquals(
       transactionsBeforeRename.map((t) => t.tx_id).sort(),
@@ -71,7 +70,6 @@ Deno.test("CategoryConcept: renaming a category preserves recorded metric transa
     const transactionsAfterRename = await store.listTransactions(
       ownerId,
       categoryId,
-      { includeAll: true },
     );
     assertEquals(
       transactionsAfterRename.map((t) => t.tx_id).sort(),
@@ -168,11 +166,7 @@ Deno.test("CategoryConcept: cross-owner isolation for categories and metrics", a
       "Owner A should have one transaction recorded.",
     );
 
-    const transactionsA = await store.listTransactions(
-      ownerA,
-      categoryA_id,
-      { includeAll: true },
-    );
+    const transactionsA = await store.listTransactions(ownerA, categoryA_id);
     assertEquals(
       transactionsA.length,
       1,
@@ -206,11 +200,7 @@ Deno.test("CategoryConcept: cross-owner isolation for categories and metrics", a
       "Owner B should have no transactions recorded.",
     );
 
-    const transactionsB = await store.listTransactions(
-      ownerB,
-      categoryB_id,
-      { includeAll: true },
-    );
+    const transactionsB = await store.listTransactions(ownerB, categoryB_id);
     assertEquals(
       transactionsB.length,
       0,
@@ -252,7 +242,6 @@ Deno.test("CategoryConcept: deleteMetricsForCategory removes metric bucket", asy
     const transactionsBeforeDelete = await store.listTransactions(
       ownerId,
       categoryId,
-      { includeAll: true },
     );
     assertEquals(
       transactionsBeforeDelete.length,
@@ -270,10 +259,10 @@ Deno.test("CategoryConcept: deleteMetricsForCategory removes metric bucket", asy
       "deleteMetricsForCategory should remove the single metric bucket.",
     );
 
+    //
     const transactionsAfterDelete = await store.listTransactions(
       ownerId,
       categoryId,
-      { includeAll: true },
     );
     assertEquals(
       transactionsAfterDelete.length,

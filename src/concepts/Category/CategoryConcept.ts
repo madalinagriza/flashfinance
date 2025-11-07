@@ -413,9 +413,30 @@ export default class CategoryConcept {
       throw new Error("Invalid transaction date provided.");
     }
 
-    const existingCategory = await this.getCategoryById(owner_id, category_id);
+    let existingCategory = await this.getCategoryById(owner_id, category_id);
     if (!existingCategory) {
-      throw new Error("Cannot record metric: category not found.");
+      // If the category doesn't exist, check if it's the special Trash category.
+      if (category_id.toString() === TRASH_CATEGORY_ID.toString()) {
+        // Lazily create the Trash category for this user.
+        const trashKey = this.makeCategoryKey(owner_id, TRASH_CATEGORY_ID);
+        const trashDoc: CategoryDoc = {
+          _id: trashKey,
+          owner_id: owner_id.toString(),
+          category_id: TRASH_CATEGORY_ID.toString(),
+          name: "Trash",
+        };
+        await this.categories.updateOne(
+          { _id: trashKey },
+          { $setOnInsert: trashDoc },
+          { upsert: true },
+        );
+        // After creating it, we can proceed as if it existed.
+      } else {
+        // If it's not the Trash category, then it's an error.
+        throw new Error(
+          `Cannot record metric: category with ID ${category_id.toString()} not found.`,
+        );
+      }
     }
 
     const metricDoc = await this.ensureMetricDocument(owner_id, category_id);
@@ -443,7 +464,6 @@ export default class CategoryConcept {
 
     return { ok: true };
   }
-
   /**
    * Implements a bulk 'addTransaction' action by calling `addTransaction` in parallel.
    * Adds multiple transaction metrics to their respective categories.

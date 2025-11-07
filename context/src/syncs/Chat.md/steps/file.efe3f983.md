@@ -1,3 +1,12 @@
+---
+timestamp: 'Fri Nov 07 2025 11:59:28 GMT-0500 (Eastern Standard Time)'
+parent: '[[..\20251107_115928.c633506d.md]]'
+content_id: efe3f9836478437c398c5df3f049b0046e04b6c1a361a38c1d8aa5def7b10dee
+---
+
+# file: src\syncs\label.sync.ts
+
+```typescript
 import { actions, Frames, Sync } from "@engine";
 import {
   Category,
@@ -94,159 +103,6 @@ export const DiscardUnstagedToTrashResponseError: Sync = (
   ),
   then: actions([Requesting.respond, { request, error }]),
 });
-
-// /**
-//  * Handles the user request to finalize all currently staged labels.
-//  * This has been split into multiple syncs to handle different outcomes:
-//  * 1. FinalizeStagedLabelsUnauthorized: Responds with an error if the session is invalid.
-//  * 2. FinalizeWithNoLabels: Handles the case where a user has no staged labels to finalize.
-//  * 3. FinalizeWithLabels: The main success path, processing all staged labels in bulk.
-//  *
-//  * This multi-sync approach correctly models the conditional logic without using a function
-//  * in the `then` clause, which resolves the errors from the previous implementation.
-//  */
-
-// // This sync handles the unauthorized case for the finalize request.
-// export const FinalizeStagedLabelsUnauthorized: Sync = (
-//   { request, session, user, error },
-// ) => ({
-//   when: actions(
-//     [Requesting.request, { path: "/Label/finalize", session }, { request }],
-//   ),
-//   where: async (frames) => {
-//     const userFrames = await frames.query(Sessioning._getUser, { session }, {
-//       user,
-//     });
-//     // This sync only fires if the session is invalid (no user found).
-//     if (userFrames.length === 0) {
-//       // Add an error to the frame to be used in the `then` clause.
-//       return frames.map((f) => ({ ...f, [error]: "Unauthorized" }));
-//     }
-//     // Veto this sync by returning empty frames if a user is found.
-//     return new Frames();
-//   },
-//   then: actions(
-//     [Requesting.respond, { request, error }],
-//   ),
-// });
-
-// // This sync handles the case where there are no staged labels for an authorized user.
-// export const FinalizeWithNoLabels: Sync = (
-//   { request, session, user, stagedLabel },
-// ) => ({
-//   when: actions(
-//     [Requesting.request, { path: "/Label/finalize", session }, { request }],
-//   ),
-//   where: async (frames) => {
-//     const userFrames = await frames.query(Sessioning._getUser, { session }, {
-//       user,
-//     });
-//     // Veto if unauthorized (handled by another sync).
-//     if (userFrames.length === 0) return new Frames();
-
-//     const stagedLabelFrames = await userFrames.query(Label.getStagedLabels, {
-//       user_id: user,
-//     }, { stagedLabel });
-//     // This sync only fires if there are NO staged labels.
-//     if (stagedLabelFrames.length === 0) {
-//       return userFrames; // Pass the frame with user binding through.
-//     }
-//     // Veto if there are labels (handled by another sync).
-//     return new Frames();
-//   },
-//   then: actions(
-//     // We still call finalize, which is idempotent and will clean up any (empty) state.
-//     [Label.finalize, { user_id: user }],
-//     [Requesting.respond, { request, ok: true }],
-//   ),
-// });
-
-// // This sync handles the main success path where staged labels exist and are processed in bulk.
-// export const FinalizeWithLabels: Sync = (
-//   {
-//     request,
-//     session,
-//     user,
-//     stagedLabel,
-//     tx,
-//     tx_ids_for_marking,
-//     tx_data_for_category,
-//   },
-// ) => ({
-//   when: actions(
-//     [Requesting.request, { path: "/Label/finalize", session }, { request }],
-//   ),
-//   where: async (frames) => {
-//     const userFrames = await frames.query(Sessioning._getUser, { session }, {
-//       user,
-//     });
-//     if (userFrames.length === 0) return new Frames(); // Veto for unauthorized
-
-//     const initialFrameWithUser = userFrames[0];
-//     const userId = initialFrameWithUser[user];
-
-//     const stagedLabelFrames = await userFrames.query(Label.getStagedLabels, {
-//       user_id: user,
-//     }, { stagedLabel });
-//     if (stagedLabelFrames.length === 0) return new Frames(); // Veto for no labels
-
-//     const enrichedFrames = new Frames();
-//     for (const frame of stagedLabelFrames) {
-//       const sl = frame[stagedLabel] as any;
-//       try {
-//         const txDocFrame = await new Frames(frame).query(
-//           Transaction.getTransaction,
-//           { owner_id: userId, tx_id: sl.tx_id },
-//           { tx },
-//         );
-//         if (txDocFrame.length > 0) enrichedFrames.push(txDocFrame[0]);
-//       } catch (e) {
-//         console.warn(
-//           `Transaction details not found for staged label tx_id: ${sl.tx_id}. Skipping.`,
-//         );
-//       }
-//     }
-
-//     if (enrichedFrames.length === 0) {
-//       // This case means staged labels existed but none had corresponding transactions.
-//       // The `FinalizeWithNoLabels` sync will run `Label.finalize` which cleans up the invalid
-//       // staged labels, and then it will correctly respond. So, we veto this sync.
-//       return new Frames();
-//     }
-
-//     const tx_ids_to_mark = enrichedFrames.map((f) =>
-//       (f[stagedLabel] as any).tx_id
-//     );
-//     const category_payload = enrichedFrames.map((f) => {
-//       const sl = f[stagedLabel] as any;
-//       const txDoc = f[tx] as any;
-//       return {
-//         category_id: sl.category_id,
-//         tx_id: sl.tx_id,
-//         amount: txDoc.amount,
-//         tx_date: txDoc.date,
-//       };
-//     });
-
-//     return new Frames({
-//       ...initialFrameWithUser,
-//       [tx_ids_for_marking]: tx_ids_to_mark,
-//       [tx_data_for_category]: category_payload,
-//     });
-//   },
-//   then: actions(
-//     [Transaction.bulk_mark_labeled, {
-//       tx_ids: tx_ids_for_marking,
-//       requester_id: user,
-//     }],
-//     [Category.bulk_add_transaction, {
-//       owner_id: user,
-//       transactions: tx_data_for_category,
-//     }],
-//     [Label.finalize, { user_id: user }],
-//     [Requesting.respond, { request, ok: true }],
-//   ),
-// });
 
 // This sync handles the unauthorized case for the finalize request.
 export const FinalizeStagedLabelsUnauthorized: Sync = (
@@ -556,36 +412,6 @@ export const RemoveCommittedLabelRequest: Sync = (
   then: actions([Label.removeCommittedLabel, { user_id: user, tx_id }]),
 });
 
-/**
- * When a committed label is "removed" (moved to trash), this sync ensures the
- * corresponding transaction is also moved from its old category to the trash
- * category within the Category concept's metrics. This keeps the two concepts in sync.
- */
-export const MoveTransactionToTrashOnLabelRemove: Sync = (
-  { user_id, tx_id, old_category_id },
-) => ({
-  when: actions(
-    // This action now returns old_category_id, which can be null.
-    [Label.removeCommittedLabel, { user_id, tx_id }, {
-      label_tx_id: tx_id,
-      old_category_id,
-    }],
-  ),
-  where: async (frames) => {
-    // Only proceed if an actual category change happened (old_category_id is not null).
-    return frames.filter((frame) => frame[old_category_id] !== null);
-  },
-  then: actions(
-    [Category.moveTransactionToTrash, {
-      owner_id: user_id,
-      from_category_id: old_category_id,
-      tx_id,
-    }],
-  ),
-});
-
-
-
 export const RemoveCommittedLabelResponseSuccess: Sync = (
   { request, label_tx_id },
 ) => ({
@@ -611,6 +437,140 @@ export const RemoveCommittedLabelResponseError: Sync = (
     ],
     [Label.removeCommittedLabel, {}, { error }],
   ),
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+//-- Update Label --//
+// This set of syncs handles a user request to change the category of an already-labeled transaction.
+// This is a two-part process:
+// 1. Update the Label concept to point to the new category.
+// 2. Update the Category concept to move the transaction's metrics from the old category to the new one.
+
+// This sync handles the initial request, verifies authorization, finds the old category,
+// and then triggers both the Label.update and Category.updateTransaction actions.
+export const UpdateLabelRequest: Sync = (
+  { request, session, user, tx_id, new_category_id, old_category_id },
+) => ({
+  when: actions([Requesting.request, {
+    path: "/Label/update",
+    session,
+    tx_id,
+    new_category_id,
+  }, { request }]),
+  where: async (frames) => {
+    // 1. Authorize the user. If unauthorized, this query fails and another sync will handle it.
+    frames = await frames.query(Sessioning._getUser, { session }, { user });
+    if (frames.length === 0) return new Frames();
+
+    // 2. Find the existing label to get the current (old) category ID.
+    // The output binding `{ category_id: old_category_id }` extracts the category_id
+    // from the returned LabelDoc and binds it to the `old_category_id` variable.
+    const labelFrames = await frames.query(
+      Label.getLabel,
+      { user_id: user, tx_id },
+      { category_id: old_category_id },
+    );
+
+    // If no label is found, veto this sync. The 'NotFound' sync will handle the response.
+    if (labelFrames.length === 0) {
+      return new Frames();
+    }
+
+    return labelFrames;
+  },
+  then: actions(
+    // Atomically trigger both updates.
+    [Label.update, { user_id: user, tx_id, new_category_id }],
+    [Category.updateTransaction, {
+      owner_id: user,
+      tx_id,
+      old_category_id, // This is bound in the `where` clause.
+      new_category_id,
+    }],
+  ),
+});
+
+// This sync responds with success if both update actions complete successfully.
+export const UpdateLabelResponseSuccess: Sync = (
+  { request, ok, label_tx_id },
+) => ({
+  when: actions(
+    [Requesting.request, { path: "/Label/update" }, { request }],
+    [Label.update, {}, { label_tx_id }],
+    [Category.updateTransaction, {}, { ok }], // Requires `ok` from Category.updateTransaction
+  ),
+  then: actions([Requesting.respond, { request, ok: true, tx_id: label_tx_id }]),
+});
+
+// This sync responds with an error if the Label.update action fails.
+export const UpdateLabelResponseErrorLabel: Sync = ({ request, error }) => ({
+  when: actions(
+    [Requesting.request, { path: "/Label/update" }, { request }],
+    [Label.update, {}, { error }],
+  ),
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+// This sync responds with an error if the Category.updateTransaction action fails.
+// It will only fire if Label.update succeeded, preventing duplicate error responses.
+export const UpdateLabelResponseErrorCategory: Sync = (
+  { request, error, label_tx_id },
+) => ({
+  when: actions(
+    [Requesting.request, { path: "/Label/update" }, { request }],
+    [Label.update, {}, { label_tx_id }], // Ensures Label.update succeeded
+    [Category.updateTransaction, {}, { error }],
+  ),
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+// This sync handles the case where the user is not authorized.
+export const UpdateLabelUnauthorized: Sync = (
+  { request, session, user, error },
+) => ({
+  when: actions([Requesting.request, {
+    path: "/Label/update",
+    session,
+  }, { request }]),
+  where: async (frames) => {
+    const userFrames = await frames.query(Sessioning._getUser, { session }, {
+      user,
+    });
+    if (userFrames.length > 0) return new Frames(); // Veto, user is authorized.
+    return frames.map((f) => ({ ...f, [error]: "Unauthorized" }));
+  },
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+// This sync handles the case where the transaction label to be updated does not exist.
+export const UpdateLabelNotFound: Sync = (
+  { request, session, user, tx_id, error, old_category_id },
+) => ({
+  when: actions([Requesting.request, {
+    path: "/Label/update",
+    session,
+    tx_id,
+  }, { request }]),
+  where: async (frames) => {
+    frames = await frames.query(Sessioning._getUser, { session }, { user });
+    if (frames.length === 0) return new Frames(); // Veto, handled by Unauthorized sync.
+
+    const labelFrames = await frames.query(
+      Label.getLabel,
+      { user_id: user, tx_id },
+      { category_id: old_category_id },
+    );
+
+    if (labelFrames.length > 0) return new Frames(); // Veto, label was found.
+
+    // Label was not found, add error and proceed.
+    const currentFrame = frames[0];
+    const txIdValue = currentFrame[tx_id];
+    return new Frames({
+      ...currentFrame,
+      [error]: `Transaction label not found for tx_id: ${txIdValue}`,
+    });
+  },
   then: actions([Requesting.respond, { request, error }]),
 });
 
@@ -645,3 +605,4 @@ export const GetLabelRequest: Sync = (
   },
   then: actions([Requesting.respond, { request, label, error }]),
 });
+```
