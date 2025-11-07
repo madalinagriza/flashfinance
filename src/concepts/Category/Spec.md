@@ -32,9 +32,9 @@ category exists and category.owner_id = owner_id; for the same owner_id, no exis
 >> *effects:*  
 updates category.name to new_name; returns updated category_id
 
-> delete(owner_id: ID, category_id: ID, can_delete : Boolean): (ok: Boolean)  
+> delete(owner_id: ID, category_id: ID): (ok: Boolean)  
 >> *requires:*  
-category exists and category.owner_id = owner_id; can_delete = true (derived from whether any labels reference this category)
+category exists and category.owner_id = owner_id; the category currently has no recorded transactions (nor dependent labels)
 >> *effects:*  
 removes the category and its associated metrics; returns true
 
@@ -49,6 +49,10 @@ removes the category and its associated metrics; returns true
 > moveTransactionToTrash(owner_id: ID, from_category_id: ID, tx_id: ID): (ok: Boolean)
 >> *requires:* owner and source category exist; transaction with tx_id is recorded for the source category
 >> *effects:* removes the transaction record from the source category, ensures the built-in Trash category exists for the owner, and records the transaction (same amount/date) under Trash; returns true
+
+> listTransactions(owner_id: ID, category_id: ID, options?: { includeAll?: Boolean; sinceDays?: Number }): ([{ tx_id: ID, amount: Number, tx_date: Date, category_name: String }])
+>> *requires:* owner and category exist
+>> *effects:* returns the category’s recorded transactions enriched with the category name; by default filters to entries from the last 10 days unless `includeAll` is true or `sinceDays` is specified; results are ordered with the most recent first
 
 
 **invariants:**

@@ -16,15 +16,19 @@
 >> a status {UNLABELED | LABELED}
 
 **actions:**
-> importTransactions(owner_id: ID, file: String)  
->> *requires:* owner exists; file id is valid  
->> *effects:* parses the files and converts rows into Transactions owned by owner_id with status UNLABELED; generates new tx_ids for each transaction; adds them to state; returns the created list  
+> import_transactions(owner_id: ID, fileContent: String)  
+>> *requires:* owner exists; file content parses into ≥ 0 valid rows  
+>> *effects:* parses the csv rows and creates Transactions for owner_id with status UNLABELED; generates tx_ids for each new record; returns nothing  
 
-> mark_labeled(tx_id: ID, requester_id: ID)  
+> mark_labeled(tx_id: ID, requester_id: ID): (tx_id: ID)  
 >> *requires:*  
 transaction tx_id exists; requester_id = transaction.owner_id  
 >> *effects:*  
-sets transaction.status to LABELED
+sets transaction.status to LABELED and returns the marked tx_id
+
+> bulk_mark_labeled(tx_ids: [ID], requester_id: ID)  
+>> *requires:* each tx_id exists and is owned by requester_id  
+>> *effects:* marks every listed transaction as LABELED; if any update fails the whole operation aborts
 
 **invariants:**
 - each transaction has exactly one owner_id

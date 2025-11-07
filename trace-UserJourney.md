@@ -1,3 +1,5 @@
+## Login
+```
 Listening on http://localhost:8000/ (http://localhost:8000/)
 [Requesting] Received request for path: /login
 
@@ -14,7 +16,9 @@ Requesting.respond {
   request: '019a5daa-e29c-7ecd-bb17-a577ff791808',
   session: '019a5daa-e2c6-73f7-9877-3f5f2b475781'
 } => { request: '019a5daa-e29c-7ecd-bb17-a577ff791808' }
-
+```
+## Main Page Loading
+```
 [Requesting] Received request for path: /Category/getCategoriesFromOwner
 [Requesting] Received request for path: /Transaction/get_unlabeled_transactions
 
@@ -91,25 +95,9 @@ Requesting.respond {
 
 Requesting.respond { request: '019a5daa-e700-7888-8172-34c8511ecf31', results: [] } => { request: '019a5daa-e700-7888-8172-34c8511ecf31' }
 
-[Requesting] Received request for path: /Transaction/import_transactions
-
-Requesting.request {
-  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
-  fileContent: 'Transaction Date,Description,Amount,Credit,Type\r\n' +
-    '2025-01-03,Starbucks Inc.,4.25,,DR\r\n' +
-    '2025-01-04,Payroll Deposit,,2500,CR\r\n' +
-    '2025-01-05,Whole Foods Market,52.3,,DR\r\n' +
-    '2025-01-06,Refund from Amazon,-12.5,,CR\r\n' +
-    '2025-01-07,Electric Company Payment,150,,DR\r\n' +
-    '2025-01-08,ATM Withdrawal,60,,DR\r\n' +
-    '2025-01-09,Salary Deposit,,2400,CR\r\n' +
-    '2025-01-10,Gym Membership,-35,,DR\r\n' +
-    '2025-01-11,Netflix Subscription,15.99,,DR\r\n' +
-    '2025-01-12,Credit Card Payment,,350,CR',
-  path: '/Transaction/import_transactions'
-} => { request: '019a5dab-3cfd-7d6f-80a6-ed9fc274a8c9' }
-
-[Requesting] Error processing request: Request 019a5dab-3cfd-7d6f-80a6-ed9fc274a8c9 timed out after 10000ms
+```
+## Import Transactions Page
+```
 [Requesting] Received request for path: /Transaction/importTransactions
 
 Requesting.request {
@@ -151,7 +139,10 @@ Transaction.import_transactions {
 
 
 Requesting.respond { request: '019a5dab-643f-70c3-a6f9-d1cc34cf9a47', ok: true } => { request: '019a5dab-643f-70c3-a6f9-d1cc34cf9a47' }
+```
 
+## Unlabeled Transaction Page
+```
 [Requesting] Received request for path: /Transaction/get_unlabeled_transactions
 
 Requesting.request {
@@ -265,7 +256,9 @@ Requesting.respond {
     }
   ]
 } => { request: '019a5dab-64e2-7387-93b6-ccb788ec1a3f' }
-
+```
+## Start Labeling Session : Fetch Data
+```
 [Requesting] Received request for path: /Category/getCategoriesFromOwner
 
 Requesting.request {
@@ -442,7 +435,12 @@ Requesting.respond {
     }
   ]
 } => { request: '019a5dab-9702-71de-9308-8982e204cbf3' }
+```
 
+## Labeling Session : Each Labeling Transaction Page
+
+### Transaction 1
+```
 [Requesting] Received request for path: /Label/suggest
 
 Requesting.request {
@@ -536,7 +534,9 @@ Requesting.respond {
   request: '019a5dab-a5a1-7a74-b4d7-818ce282266b',
   label_tx_id: Id { value: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183' }
 } => { request: '019a5dab-a5a1-7a74-b4d7-818ce282266b' }
-
+```
+### Transaction 2
+```
 [Requesting] Received request for path: /Label/suggest
 
 Requesting.request {
@@ -630,7 +630,9 @@ Requesting.respond {
   request: '019a5dab-ae87-7833-8e87-486b08075302',
   label_tx_id: Id { value: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4' }
 } => { request: '019a5dab-ae87-7833-8e87-486b08075302' }
-
+```
+### Transaction 3
+```
 [Requesting] Received request for path: /Label/suggest
 
 Requesting.request {
@@ -724,7 +726,9 @@ Requesting.respond {
   request: '019a5dab-b8c2-7704-9c67-5df2334b6014',
   label_tx_id: Id { value: 'c795b739-dce4-46a4-b295-d85435dae42c' }
 } => { request: '019a5dab-b8c2-7704-9c67-5df2334b6014' }
-
+```
+### Transaction 4 
+```
 [Requesting] Received request for path: /Label/suggest
 
 Requesting.request {
@@ -819,6 +823,9 @@ Requesting.respond {
   label_tx_id: Id { value: '331b85b5-93df-437e-850a-f089c01f8932' }
 } => { request: '019a5dab-c061-77de-8894-db0f57772252' }
 
+```
+### Transaction 5
+```
 [Requesting] Received request for path: /Label/suggest
 
 Requesting.request {
@@ -912,7 +919,10 @@ Requesting.respond {
   request: '019a5dab-c6ed-7dad-87e3-7cb7894adc91',
   label_tx_id: Id { value: 'e139bc42-aa32-40f2-9160-a1a21c41e047' }
 } => { request: '019a5dab-c6ed-7dad-87e3-7cb7894adc91' }
+```
+### Transaction 6
 
+```
 [Requesting] Received request for path: /Label/suggest
 
 Requesting.request {
@@ -1006,15 +1016,11 @@ Requesting.respond {
   request: '019a5dab-ce7d-7aea-bf44-6a39a01670b9',
   label_tx_id: Id { value: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e' }
 } => { request: '019a5dab-ce7d-7aea-bf44-6a39a01670b9' }
+```
+### Finish Labeling Session
 
-[Requesting] Received request for path: /Label/getStagedLabels
-
-Requesting.request {
-  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
-  path: '/Label/getStagedLabels'
-} => { request: '019a5dab-d7bc-758f-89e7-d1e5ca9f48e5' }
-
-[Requesting] Error processing request: Request 019a5dab-d7bc-758f-89e7-d1e5ca9f48e5 timed out after 10000ms
+*explanation:* Calling the following: getStagedLabels (Labels) -> bulk_mark_labeled (Transaction) -> bulk_add_transaction (Category) -> finalize (Label)\
+```
 [Requesting] Received request for path: /Label/finalize
 
 Requesting.request {
@@ -1357,9 +1363,12 @@ Label.getStagedLabelsInternal { user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' 
 
 Label.finalize { user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => undefined
 
-
 Requesting.respond { request: '019a5dab-ff01-7827-9716-ce7daec0338d', ok: true } => { request: '019a5dab-ff01-7827-9716-ce7daec0338d' }
 
+```
+
+## Unlabeled Transaction Page 
+```
 [Requesting] Received request for path: /Transaction/get_unlabeled_transactions
 
 Requesting.request {
@@ -1385,7 +1394,9 @@ Transaction.get_unlabeled_transactions { owner_id: '019a5d7a-5589-7792-a4a6-03a7
 
 
 Requesting.respond { request: '019a5dac-0acd-7397-a873-73a942d919ed', results: [] } => { request: '019a5dac-0acd-7397-a873-73a942d919ed' }
-
+```
+## Main Page 
+```
 [Requesting] Received request for path: /Transaction/get_unlabeled_transactions
 [Requesting] Received request for path: /Category/getCategoriesFromOwner
 
@@ -1461,7 +1472,10 @@ Requesting.respond {
     }
   ]
 } => { request: '019a5dac-1220-732b-96ac-487d4462c67c' }
+```
 
+## Categories Page
+```
 [Requesting] Received request for path: /Category/getCategoriesFromOwner
 
 Requesting.request {
@@ -1587,7 +1601,10 @@ Requesting.respond {
     }
   ]
 } => { request: '019a5dac-2eef-7e02-8339-8ea5076a9945' }
+```
+## Category Page (singular) 
 
+```
 [Requesting] Received request for path: /Category/listTransactions
 
 Requesting.request {
@@ -1862,7 +1879,11 @@ Requesting.respond {
     days: 68
   }
 } => { request: '019a5dac-8e92-7b66-8ef0-84e35b9305b8' }
+```
 
+## Back to Categories Page
+
+```
 [Requesting] Received request for path: /Category/getCategoriesFromOwner
 
 Requesting.request {
@@ -2001,3 +2022,5 @@ Requesting.respond {
 
 
 Requesting.respond { request: '019a5dac-f28c-766f-a665-b144fe7ad09a', results: [] } => { request: '019a5dac-f28c-766f-a665-b144fe7ad09a' }
+
+```

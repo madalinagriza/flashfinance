@@ -95,9 +95,9 @@ export const exclusions: Array<string> = [
   "/api/User/reactivate",
 
   // Getters
-  "/api/Category/getCategoryNameById", //"NOT CHECKED"
-  "/api/Category/getCategoriesFromOwner", //"NOT CHECKED"
-  "/api/Category/getMetric", //"NOT CHECKED"
+  "/api/Category/getCategoryNameById",
+  "/api/Category/getCategoriesFromOwner",
+  "/api/Category/getMetric",
   "/api/Transaction/getTransaction", //"NOT DONE" //"NOT CHECKED"
   "/api/Transaction/list_all", //"NOT DONE" //"NOT CHECKED"
   "/api/Transaction/get_unlabeled_transactions", //"NOT DONE" //"NOT CHECKED"
@@ -107,19 +107,19 @@ export const exclusions: Array<string> = [
   "/api/UserAuthentication/_getUsername", //"NOT DONE" //"NOT CHECKED"
 
   // Direct Actions
-  "/api/Category/create", //"NOT CHECKED"
-  "/api/Category/rename", //"NOT CHECKED"
+  "/api/Category/create",
+  "/api/Category/rename",
   "/api/Category/updateTransaction", // "NOT CHECKED"
-  "/api/Category/moveTransactionToTrash", //"NOT CHECKED"
-  "/api/Category/delete", //"NOT CHECKED"
-  "/api/Label/stage", //"NOT CHECKED"
-  "/api/Label/discardUnstagedToTrash", //"NOT CHECKED"// TO DO: expose as a command in UI
-  "/api/Label/finalize", //"NOT CHECKED"
-  "/api/Label/suggest", //"NOT CHECKED"
-  "/api/Label/cancelSession", //"NOT CHECKED" // TO DO: care-i dif între discard, cancel și finalize?
-  "/api/Label/removeCommittedLabel", //"NOT CHECKED"
+  "/api/Category/moveTransactionToTrash",
+  "/api/Category/delete",
+  "/api/Label/stage",
+  "/api/Label/discardUnstagedToTrash", // TO DO: expose as a command in UI
+  "/api/Label/finalize",
+  "/api/Label/suggest",
+  "/api/Label/cancelSession", // TO DO: care-i dif între discard, cancel și finalize?
+  "/api/Label/removeCommittedLabel",
   "/api/Transaction/import_transactions", //"NOT DONE" //"NOT CHECKED"
-  "/api/UserAuthentication/changePassword", //"NOT CHECKED"
+  "/api/UserAuthentication/changePassword",
 
   // Indirect Actions
   "/api/Category/addTransaction", //"NOT DONE" //"NOT CHECKED"
