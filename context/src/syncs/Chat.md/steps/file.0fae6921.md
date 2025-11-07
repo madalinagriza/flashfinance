@@ -1,0 +1,80 @@
+---
+timestamp: 'Thu Nov 06 2025 10:25:46 GMT-0500 (Eastern Standard Time)'
+parent: '[[..\20251106_102546.03b72fb0.md]]'
+content_id: 0fae6921a3bb75467e9eac3284d23003644e1d5a353d92b0616d0d28d9c05576
+---
+
+# file: src\syncs\transaction.sync.ts
+
+```typescript
+import { actions, Sync } from "@engine";
+import { FileUploading, Requesting, Sessioning, Transaction } from "@concepts";
+
+//-- Import Transactions --//
+export const ImportTransactionsRequest: Sync = (
+  { request, session, user, fileContent },
+) => ({
+  when: actions([Requesting.request, {
+    path: "/Transaction/importTransactions",
+    session,
+    fileContent,
+  }, { request }]),
+  where: (frames) => frames.query(Sessioning._getUser, { session }, { user }),
+  then: actions([Transaction.import_transactions, {
+    owner_id: user,
+    fileContent,
+  }]),
+});
+
+export const ImportTransactionsResponseSuccess: Sync = ({ request }) => ({
+  when: actions(
+    [Requesting.request, { path: "/Transaction/importTransactions" }, {
+      request,
+    }],
+    [Transaction.import_transactions, {}, {}], // Success has empty output
+  ),
+  then: actions([Requesting.respond, { request, ok: true }]),
+});
+
+export const ImportTransactionsResponseError: Sync = ({ request, error }) => ({
+  when: actions(
+    [Requesting.request, { path: "/Transaction/importTransactions" }, {
+      request,
+    }],
+    [Transaction.import_transactions, {}, { error }],
+  ),
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+/**
+ * This synchronization creates a pipeline between the FileUploading and Transaction concepts.
+ * When a file upload is successfully confirmed, this sync automatically triggers the
+ * transaction import process using the content of that file.
+ */
+export const ImportTransactionsOnUpload: Sync = (
+  { file, owner, content },
+) => ({
+  // WHEN a file upload is successfully confirmed...
+  when: actions(
+    [FileUploading.confirmUpload, {}, { file }],
+  ),
+  // WHERE we can retrieve the file's owner and content...
+  where: async (frames) => {
+    frames = await frames.query(FileUploading._getOwner, { file }, { owner });
+    frames = await frames.query(
+      FileUploading._getFileContent,
+      { file },
+      { content },
+    );
+    return frames;
+  },
+  // THEN import the transactions from the file content for that owner.
+  then: actions(
+    [Transaction.import_transactions, {
+      owner_id: owner,
+      fileContent: content,
+    }],
+  ),
+});
+
+```

@@ -4,7 +4,12 @@ import { testDb } from "@utils/database.ts";
 import CategoryConcept, { Id, Period } from "../CategoryConcept.ts"; // Adjust path if CategoryConcept.ts is not in the parent directory
 const TRASH_CATEGORY_ID = Id.from("TRASH_CATEGORY");
 
-Deno.test("CategoryConcept: create action works and enforces name uniqueness per owner", async () => {
+Deno.test({
+  name:
+    "CategoryConcept: create action works and enforces name uniqueness per owner",
+  sanitizeResources: false,
+  sanitizeOps: false,
+}, async () => {
   const [db, client] = await testDb();
   const store = new CategoryConcept(db);
 
@@ -62,7 +67,7 @@ Deno.test("CategoryConcept: create action works and enforces name uniqueness per
       "Should retrieve one category for the owner.",
     );
     assertEquals(
-      ownerCategories[0].toString(),
+      ownerCategories[0].category_id,
       createdCategoryId.toString(),
       "The retrieved category ID should match the created one.",
     );
@@ -92,7 +97,11 @@ Deno.test("CategoryConcept: create action works and enforces name uniqueness per
     console.log("Database client closed.");
   }
 });
-Deno.test("CategoryConcept: rename action works and enforces new name uniqueness", async () => {
+Deno.test({
+  name: "CategoryConcept: rename action works and enforces new name uniqueness",
+  sanitizeResources: false,
+  sanitizeOps: false,
+}, async () => {
   const [db, client] = await testDb();
   const store = new CategoryConcept(db);
 
@@ -262,7 +271,12 @@ Deno.test("CategoryConcept: rename action works and enforces new name uniqueness
     console.log("Database client closed.");
   }
 });
-Deno.test("CategoryConcept: delete action works and blocks when referenced by labels", async () => {
+Deno.test({
+  name:
+    "CategoryConcept: delete action works and blocks when referenced by labels",
+  sanitizeResources: false,
+  sanitizeOps: false,
+}, async () => {
   const [db, client] = await testDb();
   const store = new CategoryConcept(db);
 
@@ -330,7 +344,6 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
     const { ok: deleteOk } = await store.delete({
       owner_id: ownerId.toString(),
       category_id: categoryIdToDelete.toString(),
-      can_delete: true,
     });
     assertEquals(deleteOk, true, "Deletion should return true.");
     console.log("   ✅ Delete action completed successfully.");
@@ -360,25 +373,33 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
       "   ✅ Verified: Category 'To Be Deleted' is successfully removed.",
     );
 
-    // --- Action 2 (Negative): Attempt to delete a category that has labels ---
+    // --- Action 2 (Negative): Attempt to delete a category that has transactions ---
     console.log(
-      `\n5. Attempting to delete category "${categoryNameWithLabels}" (ID: ${categoryIdWithLabels.toString()}) with has_labels_in_category = true...`,
+      `\n5. Attempting to delete category "${categoryNameWithLabels}" (ID: ${categoryIdWithLabels.toString()}) after adding a transaction to it...`,
     );
-    // As per prompt, set has_labels_in_category to true to simulate a category referenced by labels
+    // Add a transaction so deletion should be blocked by the new transaction-check
+    const txBlockId = Id.from("tx_block_delete");
+    await store.addTransaction({
+      owner_id: ownerId.toString(),
+      category_id: categoryIdWithLabels.toString(),
+      tx_id: txBlockId.toString(),
+      amount: 10,
+      tx_date: new Date(),
+    });
+
     await assertRejects(
       async () => {
         await store.delete({
           owner_id: ownerId.toString(),
           category_id: categoryIdWithLabels.toString(),
-          can_delete: false,
         });
       },
       Error,
-      `Cannot delete category "${categoryIdWithLabels.toString()}" because it is referenced by existing labels.`,
-      "Should reject deletion if has_labels_in_category is true.",
+      `Cannot delete category "${categoryNameWithLabels}" because it contains transactions.`,
+      "Should reject deletion if it contains transactions.",
     );
     console.log(
-      "   ✅ Verified: Deletion rejected as expected due to existing labels.",
+      "   ✅ Verified: Deletion rejected as expected due to existing transactions.",
     );
 
     // --- Verification 2: Confirm the category still exists after blocked deletion ---
@@ -406,7 +427,6 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
         await store.delete({
           owner_id: ownerId.toString(),
           category_id: nonExistentCategoryId.toString(),
-          can_delete: true,
         });
       },
       Error,
@@ -421,7 +441,11 @@ Deno.test("CategoryConcept: delete action works and blocks when referenced by la
     console.log("Database client closed.");
   }
 });
-Deno.test("CategoryConcept: moveTransactionToTrash removes and reassigns metrics", async () => {
+Deno.test({
+  name: "CategoryConcept: moveTransactionToTrash removes and reassigns metrics",
+  sanitizeResources: false,
+  sanitizeOps: false,
+}, async () => {
   const [db, client] = await testDb();
   const store = new CategoryConcept(db);
 
@@ -457,15 +481,31 @@ Deno.test("CategoryConcept: moveTransactionToTrash removes and reassigns metrics
       owner_id: ownerId.toString(),
       category_id: sourceCategoryId.toString(),
     });
-    assertEquals(remaining.length, 0, "Source category should no longer list the transaction.");
+    assertEquals(
+      remaining.length,
+      0,
+      "Source category should no longer list the transaction.",
+    );
 
     const trashTransactions = await store.listTransactions({
       owner_id: ownerId.toString(),
       category_id: TRASH_CATEGORY_ID.toString(),
     });
-    assertEquals(trashTransactions.length, 1, "Trash category should contain the moved transaction.");
-    assertEquals(trashTransactions[0].tx_id, txId.toString(), "Transaction ID should match after move.");
-    assertEquals(trashTransactions[0].amount, amount, "Amount should be preserved when moving to trash.");
+    assertEquals(
+      trashTransactions.length,
+      1,
+      "Trash category should contain the moved transaction.",
+    );
+    assertEquals(
+      trashTransactions[0].tx_id,
+      txId.toString(),
+      "Transaction ID should match after move.",
+    );
+    assertEquals(
+      trashTransactions[0].amount,
+      amount,
+      "Amount should be preserved when moving to trash.",
+    );
     assertEquals(
       new Date(trashTransactions[0].tx_date).toISOString(),
       date.toISOString(),
@@ -474,15 +514,27 @@ Deno.test("CategoryConcept: moveTransactionToTrash removes and reassigns metrics
 
     const categories = await store.getCategoryNamesAndOwners();
     const trashCategory = categories.find((c) =>
-      c.owner_id.toString() === ownerId.toString() && c.category_id === TRASH_CATEGORY_ID.toString()
+      c.owner_id.toString() === ownerId.toString() &&
+      c.category_id === TRASH_CATEGORY_ID.toString()
     );
-    assertExists(trashCategory, "Trash category record should exist for the owner once a transaction is moved.");
-    assertEquals(trashCategory.name, "Trash", "Trash category should have the canonical name 'Trash'.");
+    assertExists(
+      trashCategory,
+      "Trash category record should exist for the owner once a transaction is moved.",
+    );
+    assertEquals(
+      trashCategory.name,
+      "Trash",
+      "Trash category should have the canonical name 'Trash'.",
+    );
   } finally {
     await client.close(true);
   }
 });
-Deno.test("CategoryConcept: metric transaction tracking and stats work", async () => {
+Deno.test({
+  name: "CategoryConcept: metric transaction tracking and stats work",
+  sanitizeResources: false,
+  sanitizeOps: false,
+}, async () => {
   const [db, client] = await testDb();
   const store = new CategoryConcept(db);
 
@@ -530,11 +582,14 @@ Deno.test("CategoryConcept: metric transaction tracking and stats work", async (
       new Date("2023-04-01"),
       new Date("2023-04-30"),
     );
-    const stats = await store.getMetricStats({
+    const [statsFrame] = await store.getMetricStats({
       owner_id: ownerId.toString(),
       category_id: category_id.toString(),
       period: april,
     });
+    assertExists(statsFrame, "Metric stats should return a result frame.");
+    const stats = statsFrame?.stats;
+    assertExists(stats, "Metric stats payload should be present.");
     assertEquals(
       stats.transaction_count,
       2,
@@ -588,11 +643,20 @@ Deno.test("CategoryConcept: metric transaction tracking and stats work", async (
       "Remaining transaction should be txId2.",
     );
 
-    const statsAfterRemoval = await store.getMetricStats({
+    const [statsAfterRemovalFrame] = await store.getMetricStats({
       owner_id: ownerId.toString(),
       category_id: category_id.toString(),
       period: april,
     });
+    assertExists(
+      statsAfterRemovalFrame,
+      "Metric stats should return a result after removal.",
+    );
+    const statsAfterRemoval = statsAfterRemovalFrame?.stats;
+    assertExists(
+      statsAfterRemoval,
+      "Metric stats payload should exist after removal.",
+    );
     assertEquals(
       statsAfterRemoval.transaction_count,
       1,
@@ -617,22 +681,28 @@ Deno.test("CategoryConcept: metric transaction tracking and stats work", async (
       "Removing a missing transaction should throw.",
     );
 
-    // Deleting the category should remove its metric bucket
-    const deleteResult = await store.delete({
-      owner_id: ownerId.toString(),
-      category_id: category_id.toString(),
-      can_delete: true,
-    });
-    assertEquals(deleteResult.ok, true, "Category deletion should succeed.");
+    // Deleting the category should be rejected because it still has transactions
+    await assertRejects(
+      async () => {
+        await store.delete({
+          owner_id: ownerId.toString(),
+          category_id: category_id.toString(),
+        });
+      },
+      Error,
+      `Cannot delete category "${categoryName}" because it contains transactions.`,
+      "Should reject deletion when category contains transactions.",
+    );
 
+    // Ensure the remaining transaction still exists after the failed deletion
     const postDeleteTransactions = await store.listTransactions({
       owner_id: ownerId.toString(),
       category_id: category_id.toString(),
     });
     assertEquals(
       postDeleteTransactions.length,
-      0,
-      "Metric bucket should be cleared after category deletion.",
+      1,
+      "Metric bucket should still contain the remaining transaction after failed deletion.",
     );
   } finally {
     await client.close(true);

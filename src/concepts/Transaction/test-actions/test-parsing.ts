@@ -238,10 +238,11 @@ Deno.test("TransactionConcept: mark_labeled action behaves correctly", async () 
     const gymMembershipTx = importedTransactions.find((tx) =>
       tx.merchant_text === "Gym Membership"
     );
-    assertExists(
-      gymMembershipTx,
-      "Gym Membership transaction should be present after import.",
-    );
+    if (!gymMembershipTx) {
+      throw new Error(
+        "Gym Membership transaction should be present after import.",
+      );
+    }
     assertEquals(
       gymMembershipTx.amount,
       35,
@@ -250,7 +251,17 @@ Deno.test("TransactionConcept: mark_labeled action behaves correctly", async () 
 
     // Verify all imported transactions are UNLABELED initially
     for (const tx of importedTransactions) {
-      const fetchedTx = await store.getTransaction(ownerId, Id.from(tx.tx_id));
+      const fetchedTxList = await store.getTransaction(
+        ownerId,
+        Id.from(tx.tx_id),
+      );
+      assertEquals(
+        fetchedTxList.length,
+        1,
+        `Expected a single transaction for ${tx.tx_id}.`,
+      );
+      const fetchedTxWrapper = fetchedTxList[0];
+      const fetchedTx = fetchedTxWrapper?.tx;
       assertExists(fetchedTx);
       assertEquals(
         fetchedTx.status,
@@ -283,7 +294,14 @@ Deno.test("TransactionConcept: mark_labeled action behaves correctly", async () 
     console.log(`   ✅ mark_labeled for ${txId1.toString()} successful.`);
 
     // Verification 1: Fetch the transaction and check its status
-    const fetchedTx1 = await store.getTransaction(ownerId, txId1);
+    const fetchedTxList1 = await store.getTransaction(ownerId, txId1);
+    assertEquals(
+      fetchedTxList1.length,
+      1,
+      `Expected a single transaction for ${txId1.toString()}.`,
+    );
+    const fetchedTxWrapper1 = fetchedTxList1[0];
+    const fetchedTx1 = fetchedTxWrapper1?.tx;
     assertExists(fetchedTx1);
     assertEquals(
       fetchedTx1.status,
@@ -316,7 +334,14 @@ Deno.test("TransactionConcept: mark_labeled action behaves correctly", async () 
     console.log(`   ✅ mark_labeled for ${txId2.toString()} successful.`);
 
     // Verification 2: Fetch the transaction and check its status
-    const fetchedTx2 = await store.getTransaction(ownerId, txId2);
+    const fetchedTxList2 = await store.getTransaction(ownerId, txId2);
+    assertEquals(
+      fetchedTxList2.length,
+      1,
+      `Expected a single transaction for ${txId2.toString()}.`,
+    );
+    const fetchedTxWrapper2 = fetchedTxList2[0];
+    const fetchedTx2 = fetchedTxWrapper2?.tx;
     assertExists(fetchedTx2);
     assertEquals(
       fetchedTx2.status,
@@ -362,10 +387,17 @@ Deno.test("TransactionConcept: mark_labeled action behaves correctly", async () 
       "   ✅ Verified: Cannot mark a transaction owned by another user.",
     );
     // Verify its status is still UNLABELED after the failed attempt
-    const fetchedTxWrongOwner = await store.getTransaction(
+    const fetchedTxWrongOwnerList = await store.getTransaction(
       ownerId,
       txIdWrongOwner,
     );
+    assertEquals(
+      fetchedTxWrongOwnerList.length,
+      1,
+      `Expected a single transaction for ${txIdWrongOwner.toString()}.`,
+    );
+    const fetchedTxWrongOwnerWrapper = fetchedTxWrongOwnerList[0];
+    const fetchedTxWrongOwner = fetchedTxWrongOwnerWrapper?.tx;
     assertExists(fetchedTxWrongOwner);
     assertEquals(
       fetchedTxWrongOwner.status,

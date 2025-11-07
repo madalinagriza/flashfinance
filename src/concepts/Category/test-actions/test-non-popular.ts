@@ -77,13 +77,27 @@ Deno.test("CategoryConcept: renaming a category preserves recorded metric transa
       "Transactions should remain after rename.",
     );
 
-    const statsJan = await store.getMetricStats(ownerId, categoryId, periodJan);
+    const [statsJanFrame] = await store.getMetricStats(
+      ownerId,
+      categoryId,
+      periodJan,
+    );
+    assertExists(statsJanFrame, "January stats should be available.");
+    const statsJan = statsJanFrame?.stats;
+    assertExists(statsJan, "January stats payload should be available.");
     assertEquals(
       statsJan.total_amount,
       1200.5,
       "January totals should remain after rename.",
     );
-    const statsFeb = await store.getMetricStats(ownerId, categoryId, periodFeb);
+    const [statsFebFrame] = await store.getMetricStats(
+      ownerId,
+      categoryId,
+      periodFeb,
+    );
+    assertExists(statsFebFrame, "February stats should be available.");
+    const statsFeb = statsFebFrame?.stats;
+    assertExists(statsFeb, "February stats payload should be available.");
     assertEquals(
       statsFeb.total_amount,
       1250.75,
@@ -133,7 +147,14 @@ Deno.test("CategoryConcept: cross-owner isolation for categories and metrics", a
       tx_date: new Date("2023-01-10"),
     });
 
-    const statsA = await store.getMetricStats(ownerA, categoryA_id, period);
+    const [statsAFrame] = await store.getMetricStats(
+      ownerA,
+      categoryA_id,
+      period,
+    );
+    assertExists(statsAFrame, "Owner A stats should be available.");
+    const statsA = statsAFrame?.stats;
+    assertExists(statsA, "Owner A stats payload should be available.");
     assertEquals(
       statsA.total_amount,
       totalValue,
@@ -157,8 +178,22 @@ Deno.test("CategoryConcept: cross-owner isolation for categories and metrics", a
       "Owner A transaction should match added tx.",
     );
 
-    const statsB = await store.getMetricStats(ownerB, categoryB_id, period);
-    assertEquals(statsB.total_amount, 0, "Owner B stats should remain empty.");
+    const [statsBFrame] = await store.getMetricStats(
+      ownerB,
+      categoryB_id,
+      period,
+    );
+    assertExists(statsBFrame, "Owner B stats should resolve even when empty.");
+    const statsB = statsBFrame?.stats;
+    assertExists(
+      statsB,
+      "Owner B stats payload should resolve even when empty.",
+    );
+    assertEquals(
+      statsB.total_amount,
+      0,
+      "Owner B stats should remain empty.",
+    );
     assertEquals(
       statsB.transaction_count,
       0,
@@ -233,10 +268,16 @@ Deno.test("CategoryConcept: deleteMetricsForCategory removes metric bucket", asy
       0,
       "All metric transactions should be removed.",
     );
-    const statsAfterDelete = await store.getMetricStats(
+    const [statsAfterDeleteFrame] = await store.getMetricStats(
       ownerId,
       categoryId,
       Period.from(new Date("2023-01-01"), new Date("2023-03-31")),
+    );
+    assertExists(statsAfterDeleteFrame, "Stats should resolve after deletion.");
+    const statsAfterDelete = statsAfterDeleteFrame?.stats;
+    assertExists(
+      statsAfterDelete,
+      "Stats payload should resolve after deletion.",
     );
     assertEquals(
       statsAfterDelete.total_amount,

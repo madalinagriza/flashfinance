@@ -80,6 +80,20 @@ type CategoryMetricDoc = {
   updated_at: Date;
 };
 
+type BulkTransactionEntry = {
+  category_id: string;
+  tx_id: string;
+  amount: number;
+  tx_date: Date | string;
+};
+
+type MetricStats = {
+  total_amount: number;
+  transaction_count: number;
+  average_per_day: number;
+  days: number;
+};
+
 export default class CategoryConcept {
   private categories: Collection<CategoryDoc>;
   private categoryMetrics: Collection<CategoryMetricDoc>;
@@ -286,19 +300,37 @@ export default class CategoryConcept {
     return doc.name;
   }
 
-  async getCategoriesFromOwner(owner_id: Id): Promise<Id[]>;
-  async getCategoriesFromOwner(payload: { owner_id: string }): Promise<Id[]>;
+  // async getCategoriesFromOwner(owner_id: Id): Promise<Id[]>;
+  // async getCategoriesFromOwner(payload: { owner_id: string }): Promise<Id[]>;
+  // async getCategoriesFromOwner(
+  //   a: Id | { owner_id: string },
+  // ): Promise<Id[]> {
+  //   const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+  //   const docs = await this.categories.find({
+  //     owner_id: owner_id.toString(),
+  //   })
+  //     .project({ category_id: 1, _id: 0 })
+  //     .toArray();
+
+  //   return docs.map((doc) => Id.from(doc.category_id));
+  // }
+
+  /**
+   * Query to get all categories (ID and name) for a given owner.
+   * This is a query method, intended for use in synchronizations.
+   */
   async getCategoriesFromOwner(
-    a: Id | { owner_id: string },
-  ): Promise<Id[]> {
-    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
-    const docs = await this.categories.find({
-      owner_id: owner_id.toString(),
-    })
-      .project({ category_id: 1, _id: 0 })
+    { owner_id }: { owner_id: string | Id },
+  ): Promise<{ category_id: string; name: string }[]> {
+    const ownerIdStr = owner_id.toString();
+    const docs = await this.categories.find({ owner_id: ownerIdStr })
+      .project({ category_id: 1, name: 1, _id: 0 })
       .toArray();
 
-    return docs.map((doc) => Id.from(doc.category_id));
+    return docs.map((doc) => ({
+      category_id: doc.category_id,
+      name: doc.name,
+    }));
   }
 
   private async ensureMetricDocument(
@@ -412,6 +444,49 @@ export default class CategoryConcept {
     return { ok: true };
   }
 
+  /**
+   * Implements a bulk 'addTransaction' action by calling `addTransaction` in parallel.
+   * Adds multiple transaction metrics to their respective categories.
+   *
+   * @param owner_id The ID of the user owning the categories and transactions.
+   * @param transactions A list of transaction entries to add.
+   * @returns A void Promise on success.
+   * @throws An Error if any of the individual `addTransaction` calls fail.
+   */
+  async bulk_add_transaction(
+    { owner_id, transactions }: {
+      owner_id: string;
+      transactions: BulkTransactionEntry[];
+    },
+  ): Promise<void> {
+    if (!transactions || transactions.length === 0) {
+      return; // Nothing to do
+    }
+
+    const promises = transactions.map((tx) =>
+      this.addTransaction({
+        owner_id,
+        category_id: tx.category_id,
+        tx_id: tx.tx_id,
+        amount: tx.amount,
+        tx_date: tx.tx_date,
+      })
+    );
+
+    try {
+      await Promise.all(promises);
+      return;
+    } catch (error) {
+      console.error("Error during bulk add transaction:", error);
+      // Re-throw the error to signal failure of the bulk operation
+      throw new Error(
+        `One or more transactions failed to be added. First error: ${
+          (error as Error).message
+        }`,
+      );
+    }
+  }
+
   async removeTransaction(
     owner_id: Id,
     category_id: Id,
@@ -457,6 +532,119 @@ export default class CategoryConcept {
         },
       },
     );
+
+    return { ok: true };
+  }
+
+  /**
+   * Moves a transaction from one category to another.
+   * This operation finds the transaction in the old category, removes it,
+   * and then adds it to the new category.
+   *
+   * @param owner_id The ID of the user.
+   * @param tx_id The ID of the transaction to move.
+   * @param old_category_id The source category ID.
+   * @param new_category_id The destination category ID.
+   * @returns A promise resolving to { ok: true } on success.
+   * @throws An error if the transaction or categories are not found, or if the move fails.
+   */
+  async updateTransaction(
+    owner_id: Id,
+    tx_id: Id,
+    old_category_id: Id,
+    new_category_id: Id,
+  ): Promise<{ ok: boolean }>;
+  async updateTransaction(payload: {
+    owner_id: string;
+    tx_id: string;
+    old_category_id: string;
+    new_category_id: string;
+  }): Promise<{ ok: boolean }>;
+  async updateTransaction(
+    a:
+      | Id
+      | {
+        owner_id: string;
+        tx_id: string;
+        old_category_id: string;
+        new_category_id: string;
+      },
+    b?: Id,
+    c?: Id,
+    d?: Id,
+  ): Promise<{ ok: boolean }> {
+    // Narrow arguments from both calling styles
+    const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
+    const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
+    const old_category_id = a instanceof Id ? c! : Id.from(a.old_category_id);
+    const new_category_id = a instanceof Id ? d! : Id.from(a.new_category_id);
+
+    // If the category is not changing, the operation is a success.
+    if (old_category_id.toString() === new_category_id.toString()) {
+      return { ok: true };
+    }
+
+    // Find the original transaction to get its details (amount, date).
+    const oldMetricKey = `${owner_id.toString()}:${old_category_id.toString()}`;
+    const oldMetricDoc = await this.categoryMetrics.findOne({
+      _id: oldMetricKey,
+    });
+
+    if (!oldMetricDoc) {
+      throw new Error(
+        `Metric document not found for source category ${old_category_id.toString()}.`,
+      );
+    }
+
+    const txIdStr = tx_id.toString();
+    const transactionToMove = oldMetricDoc.transactions.find(
+      (tx) => tx.tx_id === txIdStr,
+    );
+
+    if (!transactionToMove) {
+      throw new Error(
+        `Transaction ${txIdStr} not found in source category ${old_category_id.toString()}.`,
+      );
+    }
+
+    // Verify destination category exists. addTransaction does this, but failing early is better.
+    const newCategory = await this.getCategoryById(owner_id, new_category_id);
+    if (!newCategory) {
+      throw new Error(
+        `Destination category ${new_category_id.toString()} does not exist.`,
+      );
+    }
+
+    // The core logic: remove from old, then add to new.
+    // This is not a true atomic transaction, so we add a rollback mechanism.
+    await this.removeTransaction(owner_id, old_category_id, tx_id);
+
+    try {
+      await this.addTransaction(
+        owner_id,
+        new_category_id,
+        tx_id,
+        transactionToMove.amount,
+        transactionToMove.tx_date,
+      );
+    } catch (error) {
+      // If adding to the new category fails, we must roll back by adding the transaction back to the old category.
+      console.error(
+        `Failed to add transaction ${txIdStr} to new category. Rolling back.`,
+        error,
+      );
+      await this.addTransaction(
+        owner_id,
+        old_category_id,
+        tx_id,
+        transactionToMove.amount,
+        transactionToMove.tx_date,
+      );
+      // Rethrow the original error to inform the caller that the update failed.
+      throw new Error(
+        `Failed to move transaction: ${(error as Error).message}`,
+      );
+    }
 
     return { ok: true };
   }
@@ -554,22 +742,12 @@ export default class CategoryConcept {
     owner_id: Id,
     category_id: Id,
     period: Period,
-  ): Promise<{
-    total_amount: number;
-    transaction_count: number;
-    average_per_day: number;
-    days: number;
-  }>;
+  ): Promise<{ stats: MetricStats }[]>;
   async getMetricStats(payload: {
     owner_id: string;
     category_id: string;
     period: Period | { startDate: string | Date; endDate: string | Date };
-  }): Promise<{
-    total_amount: number;
-    transaction_count: number;
-    average_per_day: number;
-    days: number;
-  }>;
+  }): Promise<{ stats: MetricStats }[]>;
   async getMetricStats(
     a:
       | Id
@@ -580,12 +758,7 @@ export default class CategoryConcept {
       },
     b?: Id,
     c?: Period,
-  ): Promise<{
-    total_amount: number;
-    transaction_count: number;
-    average_per_day: number;
-    days: number;
-  }> {
+  ): Promise<{ stats: MetricStats }[]> {
     const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
     const category_id = a instanceof Id ? b! : Id.from(a.category_id);
 
@@ -614,12 +787,16 @@ export default class CategoryConcept {
     const days = this.daysInPeriod(period);
 
     if (!metricDoc || metricDoc.transactions.length === 0) {
-      return {
-        total_amount: 0,
-        transaction_count: 0,
-        average_per_day: 0,
-        days,
-      };
+      return [
+        {
+          stats: {
+            total_amount: 0,
+            transaction_count: 0,
+            average_per_day: 0,
+            days,
+          },
+        },
+      ];
     }
 
     const startMs = period.startDate.getTime();
@@ -633,19 +810,25 @@ export default class CategoryConcept {
     });
 
     if (relevant.length === 0) {
-      return {
-        total_amount: 0,
-        transaction_count: 0,
-        average_per_day: 0,
-        days,
-      };
+      return [
+        {
+          stats: {
+            total_amount: 0,
+            transaction_count: 0,
+            average_per_day: 0,
+            days,
+          },
+        },
+      ];
     }
 
     const total_amount = relevant.reduce((sum, entry) => sum + entry.amount, 0);
     const transaction_count = relevant.length;
     const average_per_day = days > 0 ? total_amount / days : 0;
 
-    return { total_amount, transaction_count, average_per_day, days };
+    return [{
+      stats: { total_amount, transaction_count, average_per_day, days },
+    }];
   }
 
   /**
@@ -656,17 +839,17 @@ export default class CategoryConcept {
     owner_id: Id,
     category_id: Id,
     period: Period,
-  ): Promise<CategoryMetricDoc | null>;
+  ): Promise<CategoryMetricDoc[]>;
   async getMetric(payload: {
     owner_id: string;
     category_id: string;
     period: Period;
-  }): Promise<CategoryMetricDoc | null>;
+  }): Promise<CategoryMetricDoc[]>;
   async getMetric(
     a: Id | { owner_id: string; category_id: string; period: Period },
     b?: Id,
     c?: Period,
-  ): Promise<CategoryMetricDoc | null> {
+  ): Promise<CategoryMetricDoc[]> {
     // narrow both styles
     const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
     const category_id = a instanceof Id ? b! : Id.from(a.category_id);
@@ -677,7 +860,8 @@ export default class CategoryConcept {
       category_id,
       period,
     );
-    return await this.categoryMetrics.findOne({ _id: metric_id });
+    const doc = await this.categoryMetrics.findOne({ _id: metric_id });
+    return doc ? [doc] : [];
   }
 
   /**
@@ -741,22 +925,18 @@ export default class CategoryConcept {
   async delete(
     owner_id: Id,
     category_id: Id,
-    can_delete: boolean,
   ): Promise<{ ok: boolean }>;
   async delete(payload: {
     owner_id: string;
     category_id: string;
-    can_delete: boolean;
   }): Promise<{ ok: boolean }>;
   async delete(
-    a: Id | { owner_id: string; category_id: string; can_delete: unknown },
+    a: Id | { owner_id: string; category_id: string },
     b?: Id,
-    c?: boolean,
   ): Promise<{ ok: boolean }> {
     // narrow both styles
     const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
     const category_id = a instanceof Id ? b! : Id.from(a.category_id);
-    const can_delete = a instanceof Id ? Boolean(c) : Boolean(a.can_delete);
 
     // Requires: category exists and category.owner_id = owner_id
     const existingCategory = await this.getCategoryById(owner_id, category_id);
@@ -767,10 +947,11 @@ export default class CategoryConcept {
       );
     }
 
-    // Requires: has_labels_in_category = false
-    if (!can_delete) {
+    // Check if the category has any transactions.
+    const transactions = await this.listTransactions(owner_id, category_id);
+    if (transactions.length > 0) {
       throw new Error(
-        `Cannot delete category "${category_id.toString()}" because it is referenced by existing labels.`,
+        `Cannot delete category "${existingCategory.name}" because it contains transactions.`,
       );
     }
 

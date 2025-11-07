@@ -40,7 +40,7 @@
 >> *effects:*  
 >> creates a StagedLabel for this user and transaction with the provided info and category. Adds it to the stagedLabels (that are not yet commited). Returns the created stagedLabel.
 ---
-> **discard**(user_id : ID, tx_id : ID, tx_name : String, tx_merchant : String)  : (label_tx_id : ID)
+> **discardUnstagedLabel**(user_id : ID, tx_id : ID, tx_name : String, tx_merchant : String)  : (label_tx_id : ID)
 >> *requires:* 
 >> no committed label exists for `tx_id`;  no stagedLabel with ID tx_id.
 >> *effects:*  
@@ -58,7 +58,7 @@
 
 ---
 
-> **cancel**(user_id : ID)  
+> **cancelSession**(user_id : ID)  
 >> *requires:*  
 true (a user may cancel a pending session at any time)  
 >> *effects:*  
@@ -80,7 +80,7 @@ updates `created_at` to now; returns updated label
 
 ---
 
-> **remove**(user_id : ID, tx_id : ID)  
+> **removeCommittedLabel**(user_id : ID, tx_id : ID)  
 >> *requires:*  
 a label for `tx_id` exists; `transaction.owner_id = user_id`  
 >> *effects:*  

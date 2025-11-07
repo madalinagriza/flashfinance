@@ -153,12 +153,108 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "design/tools/api-extraction-from-code.md",
+                "file": "src/concepts/UserAuthentication/additional-query.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "api-extraction-from-code"
+              "title": "additional-query"
+            }
+          },
+          {
+            "id": "f4cebd777f83fae3",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "3437cb4e01f316ff",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "4708feeb2492c2d2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "design/tools/concept-background.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "concept-background"
+            }
+          },
+          {
+            "id": "809a89c8f4c788e4",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "design/tools/concept-background.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "concept-background"
+            }
+          },
+          {
+            "id": "d633c038ba4cc4a9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "src/concepts/UserAuthentication/implementation.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "implementation"
+            }
+          },
+          {
+            "id": "4a1a68a61594b3bc",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "cf9490b16883fd77",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "fdd04049fee79712",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "design/tools/concept-background.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "concept-background"
             }
           },
           {
@@ -250,7 +346,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "API Specification: User Concept",
+                "query": "userauthentication",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -368,43 +464,43 @@
   },
   "active": "d59f792fbdd73dba",
   "lastOpenFiles": [
+    "src/concepts/Sessioning/SessioningConcept.ts",
+    "context/src/concepts/UserAuthentication/additional-query.md/20251104_211139.80c4ae61.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/file.1a395ea2.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/file.bdcb9a46.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/file.12ac53f5.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/file.56307da9.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/solution.c11152c2.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/20251104_211050.498f83d1.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/make a test for UserAuthentication.10eb6762.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/file.dc543b0e.md",
+    "context/src/concepts/UserAuthentication/test-actions/test-op-simple.ts/20251104_211050.68e18526.md",
+    "context/src/concepts/UserAuthentication/test-actions/test-op-simple.ts",
+    "context/src/concepts/UserAuthentication/test-actions",
+    "src/concepts/UserAuthentication/test-actions/test-op-simple.ts",
+    "src/concepts/UserAuthentication/test-actions",
+    "src/concepts/UserAuthentication/additional-query-change-Pass.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/20251104_210630.9cc7fbc1.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/file.60e64fef.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/file.7060c680.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/response.6d76b65d.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.da164f86.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.db39d951.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.9c81547e.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.a6edd866.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.90fe2e28.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.5da05fda.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.18488316.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.3eb68380.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.3a59af90.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps/_.2086d81d.md",
+    "context/src/concepts/UserAuthentication/additional-query.md/steps",
+    "context/src/concepts/User/test-actions/test-op-simple.ts",
+    "context/src/concepts/User/test-actions",
+    "context/src/concepts/UserAuthentication/additional-query-change-Pass.md/steps",
+    "context/src/concepts/UserAuthentication",
     "src/concepts/Transaction/test-actions/sample/empty.csv",
-    "src/concepts/Transaction/test-actions/sample/missing-amount-col.csv",
-    "src/concepts/Transaction/test-actions/sample/zero-negative-amounts.csv",
-    "src/concepts/Transaction/test-actions/sample/inflows-only.csv",
-    "src/concepts/Transaction/test-actions/sample/headers-only.csv",
-    "src/concepts/Category/Oldcategory.ts",
-    "src/utils/Id.ts",
-    "old-apis.md",
-    "all_apis.md",
-    "context/design/tools/api-extraction-from-code.md/20251028_211259.af66c5de.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.35c9ff36.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.78af6226.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.70a3928c.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.86b84bd9.md",
-    "context/design/tools/api-extraction-from-code.md/20251028_211154.1ae0445e.md",
-    "context/design/tools/api-extraction-from-code.md/steps/_.ae4fa8d5.md",
-    "context/design/tools/api-extraction-from-code.md/steps/prompt.b1eb0ace.md",
-    "missing_apis.md",
-    "context/design/tools/api-extraction-from-code.md/20251028_205932.95ca8de5.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.a179c0d5.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.d9dbc8b7.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.afc93f4f.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.7bb8ef62.md",
-    "context/design/tools/api-extraction-from-code.md/steps/response.90346d5a.md",
-    "context/design/tools/api-extraction-from-code.md/20251028_205838.b7dac12c.md",
-    "context/design/tools/api-extraction-from-code.md/steps/file.dcdd5ccc.md",
-    "context/design/tools/api-extraction-from-code.md/steps/file.316197a2.md",
-    "context/design/tools/api-extraction-from-code.md/steps/prompt.e39cffd6.md",
-    "context/src/concepts/Transaction/TransactionConcept.ts/20251028_205838.dfb47613.md",
-    "context/design/tools/api-extraction-from-code.md/20251027_215214.3f022557.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.3dd7d5c2.md",
-    "context/design/tools/api-extraction-from-code.md/steps/API Specification.de3ed321.md",
     "Untitled 5.canvas",
-    "Untitled 5.base",
-    "Untitled.base",
-    "context/src/concepts/Transaction/test-actions/test-parsing.ts",
-    "context/src/concepts/Transaction/test-actions/test-parsing-edge-cases.ts",
     "Untitled.canvas",
     "Untitled 2.canvas",
     "Untitled 1.canvas",

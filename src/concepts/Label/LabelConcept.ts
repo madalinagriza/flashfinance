@@ -175,7 +175,7 @@ export default class LabelConcept {
 
     // requires: no committed label exists for `tx_id`; no stagedLabel with ID tx_id.
     const txIdStr = tx_id.toString();
-    console.log(typeof user_id);
+    // console.log(typeof user_id);
     const userIdStr = user_id.toString();
     const stagedId = this.makeTxUserId(user_id, tx_id);
 
@@ -217,19 +217,19 @@ export default class LabelConcept {
    * Creates a staged label that assigns the transaction to the Trash category.
    * Signature mirrors `stage` and delegates to it, so all validation is centralized.
    */
-  async discard(
+  async discardUnstagedToTrash(
     user_id: Id,
     tx_id: Id,
     tx_name: string,
     tx_merchant: string,
   ): Promise<{ label_tx_id: Id }>;
-  async discard(payload: {
+  async discardUnstagedToTrash(payload: {
     user_id: string;
     tx_id: string;
     tx_name?: string;
     tx_merchant?: string;
   }): Promise<{ label_tx_id: Id }>;
-  async discard(
+  async discardUnstagedToTrash(
     a:
       | Id
       | {
@@ -315,14 +315,15 @@ export default class LabelConcept {
    * Cancels all staged labels for a user, deleting them without committing.
    * @param user_id The ID of the user whose staged labels are to be cancelled.
    */
-  async cancel(user_id: Id): Promise<void>;
-  async cancel(payload: { user_id: string }): Promise<void>;
-  async cancel(a: Id | { user_id: string }): Promise<void> {
+  async cancelSession(user_id: Id): Promise<{ ok: true }>;
+  async cancelSession(payload: { user_id: string }): Promise<{ ok: true }>;
+  async cancelSession(a: Id | { user_id: string }): Promise<{ ok: true }> {
     // narrow both styles
     const user_id = a instanceof Id ? a : Id.from(a.user_id);
 
     // effects: deletes all StagedLabels for that user;
     await this.stagedLabels.deleteMany({ user_id: user_id.toString() });
+    return { ok: true };
   }
 
   /** Change the category for an existing label. */
@@ -380,11 +381,14 @@ export default class LabelConcept {
   }
 
   /** Reassign the label for a transaction to the built-in Trash category. */
-  async remove(user_id: Id, tx_id: Id): Promise<{ label_tx_id: Id }>;
-  async remove(
+  async removeCommittedLabel(
+    user_id: Id,
+    tx_id: Id,
+  ): Promise<{ label_tx_id: Id }>;
+  async removeCommittedLabel(
     payload: { user_id: string; tx_id: string },
   ): Promise<{ label_tx_id: Id }>;
-  async remove(
+  async removeCommittedLabel(
     a: Id | { user_id: string; tx_id: string },
     b?: Id,
   ): Promise<{ label_tx_id: Id }> {
@@ -396,22 +400,23 @@ export default class LabelConcept {
     return { label_tx_id: tx_id };
   }
 
-  /** Queries for demos/tests. */
-  async getLabel(user_id: Id, tx_id: Id): Promise<LabelDoc | null>;
+  // Queries for demos/tests.
+  async getLabel(user_id: Id, tx_id: Id): Promise<LabelDoc[]>;
   async getLabel(
     payload: { user_id: string; tx_id: string },
-  ): Promise<LabelDoc | null>;
+  ): Promise<LabelDoc[]>;
   async getLabel(
     a: Id | { user_id: string; tx_id: string },
     b?: Id,
-  ): Promise<LabelDoc | null> {
+  ): Promise<LabelDoc[]> {
     // narrow both styles
     const user_id = a instanceof Id ? a : Id.from(a.user_id);
     const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
 
-    return await this.labels.findOne({
+    const doc = await this.labels.findOne({
       _id: this.makeTxUserId(user_id, tx_id),
     });
+    return doc ? [doc] : [];
   }
   async getTxInfo(user_id: Id, tx_id: Id) {
     return await this.txInfos.findOne({
@@ -479,10 +484,20 @@ export default class LabelConcept {
    * Returns all staged (not-yet-committed) labels for a given user.
    * @param user_id The ID of the user whose staged labels to fetch.
    */
-  async getStagedLabels(user_id: Id): Promise<StagedLabelDoc[]>;
-  async getStagedLabels(
-    payload: { user_id: string },
-  ): Promise<StagedLabelDoc[]>;
+  async getStagedLabelsInternal(
+    { user_id }: { user_id: string },
+  ): Promise<{ stagedLabel: StagedLabelDoc }[]> {
+    const userIdStr = Id.from(user_id).toString();
+    const docs = await this.stagedLabels.find({ user_id: userIdStr })
+      .toArray();
+    // Wrap each document in the format expected by the sync engine.
+    return docs.map((doc) => ({ stagedLabel: doc }));
+  }
+
+  /**
+   * Returns all staged (not-yet-committed) labels for a given user.
+   * @param user_id The ID of the user whose staged labels to fetch.
+   */
   async getStagedLabels(
     a: Id | { user_id: string },
   ): Promise<StagedLabelDoc[]> {

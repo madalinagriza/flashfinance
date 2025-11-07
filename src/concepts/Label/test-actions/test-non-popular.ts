@@ -11,16 +11,16 @@ Deno.test("LabelConcept: finalize on empty staged labels is a no-op", async () =
     // 1. Pre-condition: Ensure there are no staged labels for the user.
     // This is implicitly handled by starting with a clean DB in testDb(),
     // but we can also explicitly cancel any lingering staged labels from previous tests.
-    await store.cancel(user);
+    await store.cancelSession(user);
 
     // Verify that there are no committed labels for this user and a sample transaction
     // before calling finalize. This is to ensure that finalize doesn't create any new
     // committed labels when there are no staged ones.
     const sampleTxId = Id.from("sample-tx-id");
-    const initialCommittedLabel = await store.getLabel(user, sampleTxId);
+    const initialCommittedLabels = await store.getLabel(user, sampleTxId);
     assertEquals(
-      initialCommittedLabel,
-      null,
+      initialCommittedLabels.length,
+      0,
       "Pre-condition: No committed label should exist for the sample transaction.",
     );
 
@@ -36,10 +36,10 @@ Deno.test("LabelConcept: finalize on empty staged labels is a no-op", async () =
     // We verify this by checking that the sample transaction's label (which we
     // asserted to be null earlier) is still null. This confirms that `finalize`
     // did not erroneously create a label.
-    const postFinalizeCommittedLabel = await store.getLabel(user, sampleTxId);
+    const postFinalizeCommittedLabels = await store.getLabel(user, sampleTxId);
     assertEquals(
-      postFinalizeCommittedLabel,
-      null,
+      postFinalizeCommittedLabels.length,
+      0,
       "No new committed label should be created by finalize when no staged labels exist.",
     );
 
@@ -83,10 +83,10 @@ Deno.test("LabelConcept: Attempting to stage the same (user, tx_id) twice reject
     console.log("   First 'stage' call succeeded.");
 
     // 2. Verify that no committed label exists before the second stage call.
-    let committedLabel = await store.getLabel(user, txId);
+    let committedLabels = await store.getLabel(user, txId);
     assertEquals(
-      committedLabel,
-      null,
+      committedLabels.length,
+      0,
       "No committed label should exist immediately after the first 'stage' call.",
     );
 
@@ -106,10 +106,10 @@ Deno.test("LabelConcept: Attempting to stage the same (user, tx_id) twice reject
 
     // 4. Verify that no committed label exists after the failed second stage call.
     // This ensures that the failed attempt did not inadvertently create a committed label.
-    committedLabel = await store.getLabel(user, txId);
+    committedLabels = await store.getLabel(user, txId);
     assertEquals(
-      committedLabel,
-      null,
+      committedLabels.length,
+      0,
       "No committed label should exist after the second, rejected 'stage' call.",
     );
 
@@ -152,10 +152,10 @@ Deno.test("LabelConcept: Stage → Cancel → Re-Stage → Finalize sequence cle
   try {
     // 1. Initial state: No label exists for the (user, tx_id)
     console.log("Step 1: Verifying initial state (no label)...");
-    let currentLabel = await store.getLabel(user, txId);
+    let currentLabels = await store.getLabel(user, txId);
     assertEquals(
-      currentLabel,
-      null,
+      currentLabels.length,
+      0,
       "Initially, no label should exist for the (user, tx_id).",
     );
     console.log("   ✅ Initial state verified.");
@@ -166,26 +166,26 @@ Deno.test("LabelConcept: Stage → Cancel → Re-Stage → Finalize sequence cle
     console.log("   ✅ Initial label staged.");
 
     // 3. Verify: After staging, the label is not yet committed.
-    currentLabel = await store.getLabel(user, txId);
+    currentLabels = await store.getLabel(user, txId);
     assertEquals(
-      currentLabel,
-      null,
+      currentLabels.length,
+      0,
       "Label should not be committed immediately after staging.",
     );
     console.log("   ✅ Verified: Label remains uncommitted after first stage.");
 
     // 4. Cancel: Cancel the staged label.
     console.log("Step 3: Cancelling the staged label...");
-    await store.cancel(user);
+    await store.cancelSession(user);
     console.log("   ✅ Staged label cancelled.");
 
     // 5. Verify: Cancelling should clear any pending staged labels.
     // We can't directly inspect staged labels via public API, but subsequent `getLabel`
     // and `getTxInfo` should reflect that nothing was committed.
-    currentLabel = await store.getLabel(user, txId);
+    currentLabels = await store.getLabel(user, txId);
     assertEquals(
-      currentLabel,
-      null,
+      currentLabels.length,
+      0,
       "No committed label should exist after cancelling staged label.",
     );
 
@@ -215,10 +215,10 @@ Deno.test("LabelConcept: Stage → Cancel → Re-Stage → Finalize sequence cle
     console.log("   ✅ Label re-staged.");
 
     // 7. Verify: After re-staging, the label is still not committed.
-    currentLabel = await store.getLabel(user, txId);
+    currentLabels = await store.getLabel(user, txId);
     assertEquals(
-      currentLabel,
-      null,
+      currentLabels.length,
+      0,
       "Label should not be committed immediately after re-staging.",
     );
     console.log("   ✅ Verified: Label remains uncommitted after re-stage.");
@@ -229,11 +229,13 @@ Deno.test("LabelConcept: Stage → Cancel → Re-Stage → Finalize sequence cle
     console.log("   ✅ Label finalized.");
 
     // 9. Verify: The finalize operation should have successfully committed the label.
-    currentLabel = await store.getLabel(user, txId);
-    assertExists(
-      currentLabel,
+    currentLabels = await store.getLabel(user, txId);
+    assertEquals(
+      currentLabels.length,
+      1,
       "A committed label should exist after finalize.",
     );
+    const [currentLabel] = currentLabels;
     assertEquals(
       currentLabel.user_id,
       user.toString(),

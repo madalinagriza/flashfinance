@@ -1,0 +1,190 @@
+---
+timestamp: 'Tue Nov 04 2025 22:47:52 GMT-0500 (Eastern Standard Time)'
+parent: '[[..\20251104_224752.42d7cc07.md]]'
+content_id: e347b49aa0989e187c669cd38594a1afb804124735966a6a5c46ae40025e8094
+---
+
+# file: src\syncs\category.sync.ts
+
+```typescript
+import { actions, Sync } from "@engine";
+import { Category, Requesting, Sessioning } from "@concepts";
+
+//-- Create Category --//
+export const CreateCategoryRequest: Sync = (
+  { request, session, name, user },
+) => ({
+  when: actions([Requesting.request, {
+    path: "/Category/create",
+    session,
+    name,
+  }, { request }]),
+  where: (frames) => frames.query(Sessioning._getUser, { session }, { user }),
+  then: actions([Category.create, { owner_id: user, name }]),
+});
+
+export const CreateCategoryResponseSuccess: Sync = (
+  { request, category_id },
+) => ({
+  when: actions(
+    [Requesting.request, { path: "/Category/create" }, { request }],
+    [Category.create, {}, { category_id }],
+  ),
+  then: actions([Requesting.respond, { request, category_id }]),
+});
+
+export const CreateCategoryResponseError: Sync = ({ request, error }) => ({
+  when: actions(
+    [Requesting.request, { path: "/Category/create" }, { request }],
+    [Category.create, {}, { error }],
+  ),
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+//-- Rename Category --//
+export const RenameCategoryRequest: Sync = (
+  { request, session, category_id, new_name, user },
+) => ({
+  when: actions([Requesting.request, {
+    path: "/Category/rename",
+    session,
+    category_id,
+    new_name,
+  }, { request }]),
+  where: (frames) => frames.query(Sessioning._getUser, { session }, { user }),
+  then: actions([Category.rename, {
+    owner_id: user,
+    category_id,
+    new_name,
+  }]),
+});
+
+export const RenameCategoryResponseSuccess: Sync = (
+  { request, category_id },
+) => ({
+  when: actions(
+    [Requesting.request, { path: "/Category/rename" }, { request }],
+    [Category.rename, {}, { category_id }],
+  ),
+  then: actions([Requesting.respond, { request, category_id }]),
+});
+
+export const RenameCategoryResponseError: Sync = ({ request, error }) => ({
+  when: actions(
+    [Requesting.request, { path: "/Category/rename" }, { request }],
+    [Category.rename, {}, { error }],
+  ),
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+//-- Remove Transaction from Category --//
+export const RemoveTransactionRequest: Sync = (
+  { request, session, category_id, tx_id, user },
+) => ({
+  when: actions([Requesting.request, {
+    path: "/Category/removeTransaction",
+    session,
+    category_id,
+    tx_id,
+  }, { request }]),
+  where: (frames) => frames.query(Sessioning._getUser, { session }, { user }),
+  then: actions([Category.removeTransaction, {
+    owner_id: user,
+    category_id,
+    tx_id,
+  }]),
+});
+
+export const RemoveTransactionResponseSuccess: Sync = ({ request, ok }) => ({
+  when: actions(
+    [Requesting.request, { path: "/Category/removeTransaction" }, { request }],
+    [Category.removeTransaction, {}, { ok }],
+  ),
+  then: actions([Requesting.respond, { request, ok }]),
+});
+
+export const RemoveTransactionResponseError: Sync = ({ request, error }) => ({
+  when: actions(
+    [Requesting.request, { path: "/Category/removeTransaction" }, { request }],
+    [Category.removeTransaction, {}, { error }],
+  ),
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+//-- Move Transaction To Trash --//
+export const MoveTransactionToTrashRequest: Sync = (
+  { request, session, from_category_id, tx_id, user },
+) => ({
+  when: actions([Requesting.request, {
+    path: "/Category/moveTransactionToTrash",
+    session,
+    from_category_id,
+    tx_id,
+  }, { request }]),
+  where: (frames) => frames.query(Sessioning._getUser, { session }, { user }),
+  then: actions([Category.moveTransactionToTrash, {
+    owner_id: user,
+    from_category_id,
+    tx_id,
+  }]),
+});
+
+export const MoveTransactionToTrashResponseSuccess: Sync = (
+  { request, ok },
+) => ({
+  when: actions(
+    [
+      Requesting.request,
+      { path: "/Category/moveTransactionToTrash" },
+      { request },
+    ],
+    [Category.moveTransactionToTrash, {}, { ok }],
+  ),
+  then: actions([Requesting.respond, { request, ok }]),
+});
+
+export const MoveTransactionToTrashResponseError: Sync = (
+  { request, error },
+) => ({
+  when: actions(
+    [
+      Requesting.request,
+      { path: "/Category/moveTransactionToTrash" },
+      { request },
+    ],
+    [Category.moveTransactionToTrash, {}, { error }],
+  ),
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+//-- Delete Category --//
+export const DeleteCategoryRequest: Sync = (
+  { request, session, category_id, can_delete, user },
+) => ({
+  when: actions([Requesting.request, {
+    path: "/Category/delete",
+    session,
+    category_id,
+    can_delete,
+  }, { request }]),
+  where: (frames) => frames.query(Sessioning._getUser, { session }, { user }),
+  then: actions([Category.delete, { owner_id: user, category_id, can_delete }]),
+});
+
+export const DeleteCategoryResponseSuccess: Sync = ({ request, ok }) => ({
+  when: actions(
+    [Requesting.request, { path: "/Category/delete" }, { request }],
+    [Category.delete, {}, { ok }],
+  ),
+  then: actions([Requesting.respond, { request, ok }]),
+});
+
+export const DeleteCategoryResponseError: Sync = ({ request, error }) => ({
+  when: actions(
+    [Requesting.request, { path: "/Category/delete" }, { request }],
+    [Category.delete, {}, { error }],
+  ),
+  then: actions([Requesting.respond, { request, error }]),
+});
+
+```

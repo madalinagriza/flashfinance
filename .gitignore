@@ -11,3 +11,4 @@ src/concepts/test_concepts.ts
 src/syncs/syncs.ts
 config.json
 node_modules
+src\syncs\sample.sync.ts

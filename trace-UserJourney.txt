@@ -1,0 +1,2003 @@
+Listening on http://localhost:8000/ (http://localhost:8000/)
+[Requesting] Received request for path: /login
+
+Requesting.request { username: 'jack1', password: 'parolamea', path: '/login' } => { request: '019a5daa-e29c-7ecd-bb17-a577ff791808' }
+
+
+UserAuthentication.login { username: 'jack1', password: 'parolamea' } => { user: '019a5d7a-5589-7792-a4a6-03a7679e5448' }
+
+
+Sessioning.create { user: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => { session: '019a5daa-e2c6-73f7-9877-3f5f2b475781' }
+
+
+Requesting.respond {
+  request: '019a5daa-e29c-7ecd-bb17-a577ff791808',
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781'
+} => { request: '019a5daa-e29c-7ecd-bb17-a577ff791808' }
+
+[Requesting] Received request for path: /Category/getCategoriesFromOwner
+[Requesting] Received request for path: /Transaction/get_unlabeled_transactions
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Category/getCategoriesFromOwner'
+} => { request: '019a5daa-e6fe-7c19-97fb-c7db19044363' }
+
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Transaction/get_unlabeled_transactions'
+} => { request: '019a5daa-e700-7888-8172-34c8511ecf31' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+
+Transaction.get_unlabeled_transactions { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => []
+
+
+Requesting.respond {
+  request: '019a5daa-e6fe-7c19-97fb-c7db19044363',
+  results: [
+    {
+      category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+      name: 'Coffee'
+    },
+    {
+      category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+      name: 'Groceries'
+    },
+    {
+      category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+      name: 'Travel'
+    },
+    {
+      category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+      name: 'Misc'
+    },
+    {
+      category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+      name: 'Utilities'
+    },
+    {
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      name: 'Memberships'
+    }
+  ]
+} => { request: '019a5daa-e6fe-7c19-97fb-c7db19044363' }
+
+
+Requesting.respond { request: '019a5daa-e700-7888-8172-34c8511ecf31', results: [] } => { request: '019a5daa-e700-7888-8172-34c8511ecf31' }
+
+[Requesting] Received request for path: /Transaction/import_transactions
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  fileContent: 'Transaction Date,Description,Amount,Credit,Type\r\n' +
+    '2025-01-03,Starbucks Inc.,4.25,,DR\r\n' +
+    '2025-01-04,Payroll Deposit,,2500,CR\r\n' +
+    '2025-01-05,Whole Foods Market,52.3,,DR\r\n' +
+    '2025-01-06,Refund from Amazon,-12.5,,CR\r\n' +
+    '2025-01-07,Electric Company Payment,150,,DR\r\n' +
+    '2025-01-08,ATM Withdrawal,60,,DR\r\n' +
+    '2025-01-09,Salary Deposit,,2400,CR\r\n' +
+    '2025-01-10,Gym Membership,-35,,DR\r\n' +
+    '2025-01-11,Netflix Subscription,15.99,,DR\r\n' +
+    '2025-01-12,Credit Card Payment,,350,CR',
+  path: '/Transaction/import_transactions'
+} => { request: '019a5dab-3cfd-7d6f-80a6-ed9fc274a8c9' }
+
+[Requesting] Error processing request: Request 019a5dab-3cfd-7d6f-80a6-ed9fc274a8c9 timed out after 10000ms
+[Requesting] Received request for path: /Transaction/importTransactions
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  fileContent: 'Transaction Date,Description,Amount,Credit,Type\r\n' +
+    '2025-01-03,Starbucks Inc.,4.25,,DR\r\n' +
+    '2025-01-04,Payroll Deposit,,2500,CR\r\n' +
+    '2025-01-05,Whole Foods Market,52.3,,DR\r\n' +
+    '2025-01-06,Refund from Amazon,-12.5,,CR\r\n' +
+    '2025-01-07,Electric Company Payment,150,,DR\r\n' +
+    '2025-01-08,ATM Withdrawal,60,,DR\r\n' +
+    '2025-01-09,Salary Deposit,,2400,CR\r\n' +
+    '2025-01-10,Gym Membership,-35,,DR\r\n' +
+    '2025-01-11,Netflix Subscription,15.99,,DR\r\n' +
+    '2025-01-12,Credit Card Payment,,350,CR',
+  path: '/Transaction/importTransactions'
+} => { request: '019a5dab-643f-70c3-a6f9-d1cc34cf9a47' }
+
+Skipping value (2500) from credit-identified column (assumed inflow).
+Skipping value (-12.5) from credit-identified column (assumed inflow).
+Skipping value (2400) from credit-identified column (assumed inflow).
+Skipping value (350) from credit-identified column (assumed inflow).
+Successfully imported 6 transactions.
+
+Transaction.import_transactions {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  fileContent: 'Transaction Date,Description,Amount,Credit,Type\r\n' +
+    '2025-01-03,Starbucks Inc.,4.25,,DR\r\n' +
+    '2025-01-04,Payroll Deposit,,2500,CR\r\n' +
+    '2025-01-05,Whole Foods Market,52.3,,DR\r\n' +
+    '2025-01-06,Refund from Amazon,-12.5,,CR\r\n' +
+    '2025-01-07,Electric Company Payment,150,,DR\r\n' +
+    '2025-01-08,ATM Withdrawal,60,,DR\r\n' +
+    '2025-01-09,Salary Deposit,,2400,CR\r\n' +
+    '2025-01-10,Gym Membership,-35,,DR\r\n' +
+    '2025-01-11,Netflix Subscription,15.99,,DR\r\n' +
+    '2025-01-12,Credit Card Payment,,350,CR'
+} => undefined
+
+
+Requesting.respond { request: '019a5dab-643f-70c3-a6f9-d1cc34cf9a47', ok: true } => { request: '019a5dab-643f-70c3-a6f9-d1cc34cf9a47' }
+
+[Requesting] Received request for path: /Transaction/get_unlabeled_transactions
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Transaction/get_unlabeled_transactions'
+} => { request: '019a5dab-64e2-7387-93b6-ccb788ec1a3f' }
+
+
+Transaction.get_unlabeled_transactions { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    _id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+    tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-03T00:00:00.000Z,
+    merchant_text: 'Starbucks Inc.',
+    amount: 4.25,
+    status: 'UNLABELED'
+  },
+  {
+    _id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+    tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-05T00:00:00.000Z,
+    merchant_text: 'Whole Foods Market',
+    amount: 52.3,
+    status: 'UNLABELED'
+  },
+  {
+    _id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+    tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-07T00:00:00.000Z,
+    merchant_text: 'Electric Company Payment',
+    amount: 150,
+    status: 'UNLABELED'
+  },
+  {
+    _id: '331b85b5-93df-437e-850a-f089c01f8932',
+    tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-08T00:00:00.000Z,
+    merchant_text: 'ATM Withdrawal',
+    amount: 60,
+    status: 'UNLABELED'
+  },
+  {
+    _id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+    tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-10T00:00:00.000Z,
+    merchant_text: 'Gym Membership',
+    amount: 35,
+    status: 'UNLABELED'
+  },
+  {
+    _id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+    tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-11T00:00:00.000Z,
+    merchant_text: 'Netflix Subscription',
+    amount: 15.99,
+    status: 'UNLABELED'
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dab-64e2-7387-93b6-ccb788ec1a3f',
+  results: [
+    {
+      tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+      date: 2025-01-03T00:00:00.000Z,
+      merchant_text: 'Starbucks Inc.',
+      amount: 4.25,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+      date: 2025-01-05T00:00:00.000Z,
+      merchant_text: 'Whole Foods Market',
+      amount: 52.3,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+      date: 2025-01-07T00:00:00.000Z,
+      merchant_text: 'Electric Company Payment',
+      amount: 150,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+      date: 2025-01-08T00:00:00.000Z,
+      merchant_text: 'ATM Withdrawal',
+      amount: 60,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+      date: 2025-01-10T00:00:00.000Z,
+      merchant_text: 'Gym Membership',
+      amount: 35,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+      date: 2025-01-11T00:00:00.000Z,
+      merchant_text: 'Netflix Subscription',
+      amount: 15.99,
+      status: 'UNLABELED'
+    }
+  ]
+} => { request: '019a5dab-64e2-7387-93b6-ccb788ec1a3f' }
+
+[Requesting] Received request for path: /Category/getCategoriesFromOwner
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Category/getCategoriesFromOwner'
+} => { request: '019a5dab-96bc-7b92-80a6-4448bd12d817' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dab-96bc-7b92-80a6-4448bd12d817',
+  results: [
+    {
+      category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+      name: 'Coffee'
+    },
+    {
+      category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+      name: 'Groceries'
+    },
+    {
+      category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+      name: 'Travel'
+    },
+    {
+      category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+      name: 'Misc'
+    },
+    {
+      category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+      name: 'Utilities'
+    },
+    {
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      name: 'Memberships'
+    }
+  ]
+} => { request: '019a5dab-96bc-7b92-80a6-4448bd12d817' }
+
+[Requesting] Received request for path: /Transaction/get_unlabeled_transactions
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Transaction/get_unlabeled_transactions'
+} => { request: '019a5dab-9702-71de-9308-8982e204cbf3' }
+
+
+Transaction.get_unlabeled_transactions { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    _id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+    tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-03T00:00:00.000Z,
+    merchant_text: 'Starbucks Inc.',
+    amount: 4.25,
+    status: 'UNLABELED'
+  },
+  {
+    _id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+    tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-05T00:00:00.000Z,
+    merchant_text: 'Whole Foods Market',
+    amount: 52.3,
+    status: 'UNLABELED'
+  },
+  {
+    _id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+    tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-07T00:00:00.000Z,
+    merchant_text: 'Electric Company Payment',
+    amount: 150,
+    status: 'UNLABELED'
+  },
+  {
+    _id: '331b85b5-93df-437e-850a-f089c01f8932',
+    tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-08T00:00:00.000Z,
+    merchant_text: 'ATM Withdrawal',
+    amount: 60,
+    status: 'UNLABELED'
+  },
+  {
+    _id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+    tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-10T00:00:00.000Z,
+    merchant_text: 'Gym Membership',
+    amount: 35,
+    status: 'UNLABELED'
+  },
+  {
+    _id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+    tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+    owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+    date: 2025-01-11T00:00:00.000Z,
+    merchant_text: 'Netflix Subscription',
+    amount: 15.99,
+    status: 'UNLABELED'
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dab-9702-71de-9308-8982e204cbf3',
+  results: [
+    {
+      tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+      date: 2025-01-03T00:00:00.000Z,
+      merchant_text: 'Starbucks Inc.',
+      amount: 4.25,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+      date: 2025-01-05T00:00:00.000Z,
+      merchant_text: 'Whole Foods Market',
+      amount: 52.3,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+      date: 2025-01-07T00:00:00.000Z,
+      merchant_text: 'Electric Company Payment',
+      amount: 150,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+      date: 2025-01-08T00:00:00.000Z,
+      merchant_text: 'ATM Withdrawal',
+      amount: 60,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+      date: 2025-01-10T00:00:00.000Z,
+      merchant_text: 'Gym Membership',
+      amount: 35,
+      status: 'UNLABELED'
+    },
+    {
+      tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+      date: 2025-01-11T00:00:00.000Z,
+      merchant_text: 'Netflix Subscription',
+      amount: 15.99,
+      status: 'UNLABELED'
+    }
+  ]
+} => { request: '019a5dab-9702-71de-9308-8982e204cbf3' }
+
+[Requesting] Received request for path: /Label/suggest
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  txInfo: {
+    tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+    tx_name: 'Starbucks Inc.',
+    tx_merchant: 'Starbucks Inc.'
+  },
+  path: '/Label/suggest'
+} => { request: '019a5dab-975a-78ed-8897-d1ed41b1d4a4' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+🤖 Requesting labeling suggestions from Gemini AI...
+✅ Received response from Gemini AI!
+
+
+Label.suggest {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  allCategories: Frames(6) [
+    [ 'Coffee', '6db7a5bc-48f8-4103-a28e-07f77fdc50bd' ],
+    [ 'Groceries', '3e6b4924-194d-4610-97f1-1c67b2960b2e' ],
+    [ 'Travel', 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1' ],
+    [ 'Misc', '0d48bd67-eb52-457b-886e-65ce4872f302' ],
+    [ 'Utilities', '78c18df5-23c2-4900-b084-2c45940b6de5' ],
+    [ 'Memberships', '33c3514a-2b4f-433e-94a3-1d0cb65a7285' ]
+  ],
+  txInfo: {
+    tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+    tx_name: 'Starbucks Inc.',
+    tx_merchant: 'Starbucks Inc.'
+  }
+} => {
+  name: 'Coffee',
+  id: Id { value: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd' }
+}
+
+
+Requesting.respond {
+  request: '019a5dab-975a-78ed-8897-d1ed41b1d4a4',
+  id: Id { value: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd' },
+  name: 'Coffee'
+} => { request: '019a5dab-975a-78ed-8897-d1ed41b1d4a4' }
+
+[Requesting] Received request for path: /Label/stage
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+  tx_name: 'Starbucks Inc.',
+  tx_merchant: 'Starbucks Inc.',
+  category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+  path: '/Label/stage'
+} => { request: '019a5dab-a5a1-7a74-b4d7-818ce282266b' }
+
+
+Label.stage {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+  tx_name: 'Starbucks Inc.',
+  tx_merchant: 'Starbucks Inc.',
+  category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd'
+} => { label_tx_id: Id { value: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183' } }
+
+
+Requesting.respond {
+  request: '019a5dab-a5a1-7a74-b4d7-818ce282266b',
+  label_tx_id: Id { value: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183' }
+} => { request: '019a5dab-a5a1-7a74-b4d7-818ce282266b' }
+
+[Requesting] Received request for path: /Label/suggest
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  txInfo: {
+    tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+    tx_name: 'Whole Foods Market',
+    tx_merchant: 'Whole Foods Market'
+  },
+  path: '/Label/suggest'
+} => { request: '019a5dab-a609-78a2-8e17-0e036f86549a' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+🤖 Requesting labeling suggestions from Gemini AI...
+✅ Received response from Gemini AI!
+
+
+Label.suggest {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  allCategories: Frames(6) [
+    [ 'Coffee', '6db7a5bc-48f8-4103-a28e-07f77fdc50bd' ],
+    [ 'Groceries', '3e6b4924-194d-4610-97f1-1c67b2960b2e' ],
+    [ 'Travel', 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1' ],
+    [ 'Misc', '0d48bd67-eb52-457b-886e-65ce4872f302' ],
+    [ 'Utilities', '78c18df5-23c2-4900-b084-2c45940b6de5' ],
+    [ 'Memberships', '33c3514a-2b4f-433e-94a3-1d0cb65a7285' ]
+  ],
+  txInfo: {
+    tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+    tx_name: 'Whole Foods Market',
+    tx_merchant: 'Whole Foods Market'
+  }
+} => {
+  name: 'Groceries',
+  id: Id { value: '3e6b4924-194d-4610-97f1-1c67b2960b2e' }
+}
+
+
+Requesting.respond {
+  request: '019a5dab-a609-78a2-8e17-0e036f86549a',
+  id: Id { value: '3e6b4924-194d-4610-97f1-1c67b2960b2e' },
+  name: 'Groceries'
+} => { request: '019a5dab-a609-78a2-8e17-0e036f86549a' }
+
+[Requesting] Received request for path: /Label/stage
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+  tx_name: 'Whole Foods Market',
+  tx_merchant: 'Whole Foods Market',
+  category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+  path: '/Label/stage'
+} => { request: '019a5dab-ae87-7833-8e87-486b08075302' }
+
+
+Label.stage {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+  tx_name: 'Whole Foods Market',
+  tx_merchant: 'Whole Foods Market',
+  category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e'
+} => { label_tx_id: Id { value: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4' } }
+
+
+Requesting.respond {
+  request: '019a5dab-ae87-7833-8e87-486b08075302',
+  label_tx_id: Id { value: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4' }
+} => { request: '019a5dab-ae87-7833-8e87-486b08075302' }
+
+[Requesting] Received request for path: /Label/suggest
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  txInfo: {
+    tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+    tx_name: 'Electric Company Payment',
+    tx_merchant: 'Electric Company Payment'
+  },
+  path: '/Label/suggest'
+} => { request: '019a5dab-aeec-7bb8-8399-95a138a69305' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+🤖 Requesting labeling suggestions from Gemini AI...
+✅ Received response from Gemini AI!
+
+
+Label.suggest {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  allCategories: Frames(6) [
+    [ 'Coffee', '6db7a5bc-48f8-4103-a28e-07f77fdc50bd' ],
+    [ 'Groceries', '3e6b4924-194d-4610-97f1-1c67b2960b2e' ],
+    [ 'Travel', 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1' ],
+    [ 'Misc', '0d48bd67-eb52-457b-886e-65ce4872f302' ],
+    [ 'Utilities', '78c18df5-23c2-4900-b084-2c45940b6de5' ],
+    [ 'Memberships', '33c3514a-2b4f-433e-94a3-1d0cb65a7285' ]
+  ],
+  txInfo: {
+    tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+    tx_name: 'Electric Company Payment',
+    tx_merchant: 'Electric Company Payment'
+  }
+} => {
+  name: 'Utilities',
+  id: Id { value: '78c18df5-23c2-4900-b084-2c45940b6de5' }
+}
+
+
+Requesting.respond {
+  request: '019a5dab-aeec-7bb8-8399-95a138a69305',
+  id: Id { value: '78c18df5-23c2-4900-b084-2c45940b6de5' },
+  name: 'Utilities'
+} => { request: '019a5dab-aeec-7bb8-8399-95a138a69305' }
+
+[Requesting] Received request for path: /Label/stage
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+  tx_name: 'Electric Company Payment',
+  tx_merchant: 'Electric Company Payment',
+  category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+  path: '/Label/stage'
+} => { request: '019a5dab-b8c2-7704-9c67-5df2334b6014' }
+
+
+Label.stage {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+  tx_name: 'Electric Company Payment',
+  tx_merchant: 'Electric Company Payment',
+  category_id: '78c18df5-23c2-4900-b084-2c45940b6de5'
+} => { label_tx_id: Id { value: 'c795b739-dce4-46a4-b295-d85435dae42c' } }
+
+
+Requesting.respond {
+  request: '019a5dab-b8c2-7704-9c67-5df2334b6014',
+  label_tx_id: Id { value: 'c795b739-dce4-46a4-b295-d85435dae42c' }
+} => { request: '019a5dab-b8c2-7704-9c67-5df2334b6014' }
+
+[Requesting] Received request for path: /Label/suggest
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  txInfo: {
+    tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+    tx_name: 'ATM Withdrawal',
+    tx_merchant: 'ATM Withdrawal'
+  },
+  path: '/Label/suggest'
+} => { request: '019a5dab-b92f-752f-977a-3d179f6f2f76' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+🤖 Requesting labeling suggestions from Gemini AI...
+✅ Received response from Gemini AI!
+
+
+Label.suggest {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  allCategories: Frames(6) [
+    [ 'Coffee', '6db7a5bc-48f8-4103-a28e-07f77fdc50bd' ],
+    [ 'Groceries', '3e6b4924-194d-4610-97f1-1c67b2960b2e' ],
+    [ 'Travel', 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1' ],
+    [ 'Misc', '0d48bd67-eb52-457b-886e-65ce4872f302' ],
+    [ 'Utilities', '78c18df5-23c2-4900-b084-2c45940b6de5' ],
+    [ 'Memberships', '33c3514a-2b4f-433e-94a3-1d0cb65a7285' ]
+  ],
+  txInfo: {
+    tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+    tx_name: 'ATM Withdrawal',
+    tx_merchant: 'ATM Withdrawal'
+  }
+} => {
+  name: 'Misc',
+  id: Id { value: '0d48bd67-eb52-457b-886e-65ce4872f302' }
+}
+
+
+Requesting.respond {
+  request: '019a5dab-b92f-752f-977a-3d179f6f2f76',
+  id: Id { value: '0d48bd67-eb52-457b-886e-65ce4872f302' },
+  name: 'Misc'
+} => { request: '019a5dab-b92f-752f-977a-3d179f6f2f76' }
+
+[Requesting] Received request for path: /Label/stage
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+  tx_name: 'ATM Withdrawal',
+  tx_merchant: 'ATM Withdrawal',
+  category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+  path: '/Label/stage'
+} => { request: '019a5dab-c061-77de-8894-db0f57772252' }
+
+
+Label.stage {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+  tx_name: 'ATM Withdrawal',
+  tx_merchant: 'ATM Withdrawal',
+  category_id: '0d48bd67-eb52-457b-886e-65ce4872f302'
+} => { label_tx_id: Id { value: '331b85b5-93df-437e-850a-f089c01f8932' } }
+
+
+Requesting.respond {
+  request: '019a5dab-c061-77de-8894-db0f57772252',
+  label_tx_id: Id { value: '331b85b5-93df-437e-850a-f089c01f8932' }
+} => { request: '019a5dab-c061-77de-8894-db0f57772252' }
+
+[Requesting] Received request for path: /Label/suggest
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  txInfo: {
+    tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+    tx_name: 'Gym Membership',
+    tx_merchant: 'Gym Membership'
+  },
+  path: '/Label/suggest'
+} => { request: '019a5dab-c0bf-7bae-88bb-1c616ef66c4c' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+🤖 Requesting labeling suggestions from Gemini AI...
+✅ Received response from Gemini AI!
+
+
+Label.suggest {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  allCategories: Frames(6) [
+    [ 'Coffee', '6db7a5bc-48f8-4103-a28e-07f77fdc50bd' ],
+    [ 'Groceries', '3e6b4924-194d-4610-97f1-1c67b2960b2e' ],
+    [ 'Travel', 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1' ],
+    [ 'Misc', '0d48bd67-eb52-457b-886e-65ce4872f302' ],
+    [ 'Utilities', '78c18df5-23c2-4900-b084-2c45940b6de5' ],
+    [ 'Memberships', '33c3514a-2b4f-433e-94a3-1d0cb65a7285' ]
+  ],
+  txInfo: {
+    tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+    tx_name: 'Gym Membership',
+    tx_merchant: 'Gym Membership'
+  }
+} => {
+  name: 'Memberships',
+  id: Id { value: '33c3514a-2b4f-433e-94a3-1d0cb65a7285' }
+}
+
+
+Requesting.respond {
+  request: '019a5dab-c0bf-7bae-88bb-1c616ef66c4c',
+  id: Id { value: '33c3514a-2b4f-433e-94a3-1d0cb65a7285' },
+  name: 'Memberships'
+} => { request: '019a5dab-c0bf-7bae-88bb-1c616ef66c4c' }
+
+[Requesting] Received request for path: /Label/stage
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+  tx_name: 'Gym Membership',
+  tx_merchant: 'Gym Membership',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+  path: '/Label/stage'
+} => { request: '019a5dab-c6ed-7dad-87e3-7cb7894adc91' }
+
+
+Label.stage {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+  tx_name: 'Gym Membership',
+  tx_merchant: 'Gym Membership',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285'
+} => { label_tx_id: Id { value: 'e139bc42-aa32-40f2-9160-a1a21c41e047' } }
+
+
+Requesting.respond {
+  request: '019a5dab-c6ed-7dad-87e3-7cb7894adc91',
+  label_tx_id: Id { value: 'e139bc42-aa32-40f2-9160-a1a21c41e047' }
+} => { request: '019a5dab-c6ed-7dad-87e3-7cb7894adc91' }
+
+[Requesting] Received request for path: /Label/suggest
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  txInfo: {
+    tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+    tx_name: 'Netflix Subscription',
+    tx_merchant: 'Netflix Subscription'
+  },
+  path: '/Label/suggest'
+} => { request: '019a5dab-c74f-76ce-b378-5e2d63a0a027' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+🤖 Requesting labeling suggestions from Gemini AI...
+✅ Received response from Gemini AI!
+
+
+Label.suggest {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  allCategories: Frames(6) [
+    [ 'Coffee', '6db7a5bc-48f8-4103-a28e-07f77fdc50bd' ],
+    [ 'Groceries', '3e6b4924-194d-4610-97f1-1c67b2960b2e' ],
+    [ 'Travel', 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1' ],
+    [ 'Misc', '0d48bd67-eb52-457b-886e-65ce4872f302' ],
+    [ 'Utilities', '78c18df5-23c2-4900-b084-2c45940b6de5' ],
+    [ 'Memberships', '33c3514a-2b4f-433e-94a3-1d0cb65a7285' ]
+  ],
+  txInfo: {
+    tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+    tx_name: 'Netflix Subscription',
+    tx_merchant: 'Netflix Subscription'
+  }
+} => {
+  name: 'Memberships',
+  id: Id { value: '33c3514a-2b4f-433e-94a3-1d0cb65a7285' }
+}
+
+
+Requesting.respond {
+  request: '019a5dab-c74f-76ce-b378-5e2d63a0a027',
+  id: Id { value: '33c3514a-2b4f-433e-94a3-1d0cb65a7285' },
+  name: 'Memberships'
+} => { request: '019a5dab-c74f-76ce-b378-5e2d63a0a027' }
+
+[Requesting] Received request for path: /Label/stage
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+  tx_name: 'Netflix Subscription',
+  tx_merchant: 'Netflix Subscription',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+  path: '/Label/stage'
+} => { request: '019a5dab-ce7d-7aea-bf44-6a39a01670b9' }
+
+
+Label.stage {
+  user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+  tx_name: 'Netflix Subscription',
+  tx_merchant: 'Netflix Subscription',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285'
+} => { label_tx_id: Id { value: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e' } }
+
+
+Requesting.respond {
+  request: '019a5dab-ce7d-7aea-bf44-6a39a01670b9',
+  label_tx_id: Id { value: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e' }
+} => { request: '019a5dab-ce7d-7aea-bf44-6a39a01670b9' }
+
+[Requesting] Received request for path: /Label/getStagedLabels
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Label/getStagedLabels'
+} => { request: '019a5dab-d7bc-758f-89e7-d1e5ca9f48e5' }
+
+[Requesting] Error processing request: Request 019a5dab-d7bc-758f-89e7-d1e5ca9f48e5 timed out after 10000ms
+[Requesting] Received request for path: /Label/finalize
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Label/finalize'
+} => { request: '019a5dab-ff01-7827-9716-ce7daec0338d' }
+
+
+Label.getStagedLabelsInternal { user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    stagedLabel: {
+      _id: '019a5d7a-5589-7792-a4a6-03a7679e5448:dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+      user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+      category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+      tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+      tx_name: 'Starbucks Inc.',
+      tx_merchant: 'Starbucks Inc.',
+      staged_at: 2025-11-07T09:35:21.565Z
+    }
+  },
+  {
+    stagedLabel: {
+      _id: '019a5d7a-5589-7792-a4a6-03a7679e5448:e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+      user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+      category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+      tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+      tx_name: 'Whole Foods Market',
+      tx_merchant: 'Whole Foods Market',
+      staged_at: 2025-11-07T09:35:23.837Z
+    }
+  },
+  {
+    stagedLabel: {
+      _id: '019a5d7a-5589-7792-a4a6-03a7679e5448:c795b739-dce4-46a4-b295-d85435dae42c',
+      user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+      category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+      tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+      tx_name: 'Electric Company Payment',
+      tx_merchant: 'Electric Company Payment',
+      staged_at: 2025-11-07T09:35:26.467Z
+    }
+  },
+  {
+    stagedLabel: {
+      _id: '019a5d7a-5589-7792-a4a6-03a7679e5448:331b85b5-93df-437e-850a-f089c01f8932',
+      user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+      category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+      tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+      tx_name: 'ATM Withdrawal',
+      tx_merchant: 'ATM Withdrawal',
+      staged_at: 2025-11-07T09:35:28.408Z
+    }
+  },
+  {
+    stagedLabel: {
+      _id: '019a5d7a-5589-7792-a4a6-03a7679e5448:e139bc42-aa32-40f2-9160-a1a21c41e047',
+      user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+      tx_name: 'Gym Membership',
+      tx_merchant: 'Gym Membership',
+      staged_at: 2025-11-07T09:35:30.084Z
+    }
+  },
+  {
+    stagedLabel: {
+      _id: '019a5d7a-5589-7792-a4a6-03a7679e5448:a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+      user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+      tx_name: 'Netflix Subscription',
+      tx_merchant: 'Netflix Subscription',
+      staged_at: 2025-11-07T09:35:32.021Z
+    }
+  }
+]
+
+Trace: [Label.sync] FinalizeWithLabels: fetched staged labels { count: 6, request: Symbol(request) }
+    at Object.where (file:///C:/Users/mgriz/flashfinance/src/syncs/label.sync.ts:342:13)
+    at eventLoopTick (ext:core/01_core.js:179:7)
+    at async SyncConcept.synchronize (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:116:17)
+    at async Proxy.instrumented (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:349:15)
+    at async file:///C:/Users/mgriz/flashfinance/src/concepts/Requesting/RequestingConcept.ts:278:27
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async cors (https://jsr.io/@hono/hono/4.10.4/src/middleware/cors/index.ts:152:5)
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async https://jsr.io/@hono/hono/4.10.4/src/hono-base.ts:440:25
+    at async mapped (ext:deno_http/00_serve.ts:360:18)
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-03T00:00:00.000Z,
+      merchant_text: 'Starbucks Inc.',
+      amount: 4.25
+    }
+  }
+]
+
+Trace: [Label.sync] FinalizeWithLabels: transaction info lookup {
+  tx_id: "dd1c00a0-bcfc-41a4-9aa2-65ecaa272183",
+  frames: 1,
+  request: Symbol(request)
+}
+    at Object.where (file:///C:/Users/mgriz/flashfinance/src/syncs/label.sync.ts:375:17)
+    at eventLoopTick (ext:core/01_core.js:179:7)
+    at async SyncConcept.synchronize (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:116:17)
+    at async Proxy.instrumented (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:349:15)
+    at async file:///C:/Users/mgriz/flashfinance/src/concepts/Requesting/RequestingConcept.ts:278:27
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async cors (https://jsr.io/@hono/hono/4.10.4/src/middleware/cors/index.ts:152:5)
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async https://jsr.io/@hono/hono/4.10.4/src/hono-base.ts:440:25
+    at async mapped (ext:deno_http/00_serve.ts:360:18)
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-05T00:00:00.000Z,
+      merchant_text: 'Whole Foods Market',
+      amount: 52.3
+    }
+  }
+]
+
+Trace: [Label.sync] FinalizeWithLabels: transaction info lookup {
+  tx_id: "e6f8b798-b253-47d5-8c23-d021aea3d7f4",
+  frames: 1,
+  request: Symbol(request)
+}
+    at Object.where (file:///C:/Users/mgriz/flashfinance/src/syncs/label.sync.ts:375:17)
+    at eventLoopTick (ext:core/01_core.js:179:7)
+    at async SyncConcept.synchronize (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:116:17)
+    at async Proxy.instrumented (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:349:15)
+    at async file:///C:/Users/mgriz/flashfinance/src/concepts/Requesting/RequestingConcept.ts:278:27
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async cors (https://jsr.io/@hono/hono/4.10.4/src/middleware/cors/index.ts:152:5)
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async https://jsr.io/@hono/hono/4.10.4/src/hono-base.ts:440:25
+    at async mapped (ext:deno_http/00_serve.ts:360:18)
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-07T00:00:00.000Z,
+      merchant_text: 'Electric Company Payment',
+      amount: 150
+    }
+  }
+]
+
+Trace: [Label.sync] FinalizeWithLabels: transaction info lookup {
+  tx_id: "c795b739-dce4-46a4-b295-d85435dae42c",
+  frames: 1,
+  request: Symbol(request)
+}
+    at Object.where (file:///C:/Users/mgriz/flashfinance/src/syncs/label.sync.ts:375:17)
+    at eventLoopTick (ext:core/01_core.js:179:7)
+    at async SyncConcept.synchronize (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:116:17)
+    at async Proxy.instrumented (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:349:15)
+    at async file:///C:/Users/mgriz/flashfinance/src/concepts/Requesting/RequestingConcept.ts:278:27
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async cors (https://jsr.io/@hono/hono/4.10.4/src/middleware/cors/index.ts:152:5)
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async https://jsr.io/@hono/hono/4.10.4/src/hono-base.ts:440:25
+    at async mapped (ext:deno_http/00_serve.ts:360:18)
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: '331b85b5-93df-437e-850a-f089c01f8932'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-08T00:00:00.000Z,
+      merchant_text: 'ATM Withdrawal',
+      amount: 60
+    }
+  }
+]
+
+Trace: [Label.sync] FinalizeWithLabels: transaction info lookup {
+  tx_id: "331b85b5-93df-437e-850a-f089c01f8932",
+  frames: 1,
+  request: Symbol(request)
+}
+    at Object.where (file:///C:/Users/mgriz/flashfinance/src/syncs/label.sync.ts:375:17)
+    at eventLoopTick (ext:core/01_core.js:179:7)
+    at async SyncConcept.synchronize (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:116:17)
+    at async Proxy.instrumented (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:349:15)
+    at async file:///C:/Users/mgriz/flashfinance/src/concepts/Requesting/RequestingConcept.ts:278:27
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async cors (https://jsr.io/@hono/hono/4.10.4/src/middleware/cors/index.ts:152:5)
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async https://jsr.io/@hono/hono/4.10.4/src/hono-base.ts:440:25
+    at async mapped (ext:deno_http/00_serve.ts:360:18)
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-10T00:00:00.000Z,
+      merchant_text: 'Gym Membership',
+      amount: 35
+    }
+  }
+]
+
+Trace: [Label.sync] FinalizeWithLabels: transaction info lookup {
+  tx_id: "e139bc42-aa32-40f2-9160-a1a21c41e047",
+  frames: 1,
+  request: Symbol(request)
+}
+    at Object.where (file:///C:/Users/mgriz/flashfinance/src/syncs/label.sync.ts:375:17)
+    at eventLoopTick (ext:core/01_core.js:179:7)
+    at async SyncConcept.synchronize (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:116:17)
+    at async Proxy.instrumented (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:349:15)
+    at async file:///C:/Users/mgriz/flashfinance/src/concepts/Requesting/RequestingConcept.ts:278:27
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async cors (https://jsr.io/@hono/hono/4.10.4/src/middleware/cors/index.ts:152:5)
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async https://jsr.io/@hono/hono/4.10.4/src/hono-base.ts:440:25
+    at async mapped (ext:deno_http/00_serve.ts:360:18)
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-11T00:00:00.000Z,
+      merchant_text: 'Netflix Subscription',
+      amount: 15.99
+    }
+  }
+]
+
+Trace: [Label.sync] FinalizeWithLabels: transaction info lookup {
+  tx_id: "a67cb6db-c3b3-4471-afc0-872b9ef3297e",
+  frames: 1,
+  request: Symbol(request)
+}
+    at Object.where (file:///C:/Users/mgriz/flashfinance/src/syncs/label.sync.ts:375:17)
+    at eventLoopTick (ext:core/01_core.js:179:7)
+    at async SyncConcept.synchronize (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:116:17)
+    at async Proxy.instrumented (file:///C:/Users/mgriz/flashfinance/src/engine/sync.ts:349:15)
+    at async file:///C:/Users/mgriz/flashfinance/src/concepts/Requesting/RequestingConcept.ts:278:27
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async cors (https://jsr.io/@hono/hono/4.10.4/src/middleware/cors/index.ts:152:5)
+    at async dispatch (https://jsr.io/@hono/hono/4.10.4/src/compose.ts:51:17)
+    at async https://jsr.io/@hono/hono/4.10.4/src/hono-base.ts:440:25
+    at async mapped (ext:deno_http/00_serve.ts:360:18)
+[Label.sync] FinalizeWithLabels: prepared payload {
+  request: Symbol(request),
+  tx_ids_to_mark: Frames(6) [
+    "dd1c00a0-bcfc-41a4-9aa2-65ecaa272183",
+    "e6f8b798-b253-47d5-8c23-d021aea3d7f4",
+    "c795b739-dce4-46a4-b295-d85435dae42c",
+    "331b85b5-93df-437e-850a-f089c01f8932",
+    "e139bc42-aa32-40f2-9160-a1a21c41e047",
+    "a67cb6db-c3b3-4471-afc0-872b9ef3297e"
+  ],
+  category_payload_count: 6
+}
+
+Transaction.bulk_mark_labeled {
+  tx_ids: Frames(6) [
+    'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+    'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+    'c795b739-dce4-46a4-b295-d85435dae42c',
+    '331b85b5-93df-437e-850a-f089c01f8932',
+    'e139bc42-aa32-40f2-9160-a1a21c41e047',
+    'a67cb6db-c3b3-4471-afc0-872b9ef3297e'
+  ],
+  requester_id: '019a5d7a-5589-7792-a4a6-03a7679e5448'
+} => undefined
+
+
+Category.bulk_add_transaction {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  transactions: Frames(6) [
+    {
+      category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+      tx_id: 'dd1c00a0-bcfc-41a4-9aa2-65ecaa272183',
+      amount: 4.25,
+      tx_date: 2025-01-03T00:00:00.000Z
+    },
+    {
+      category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+      tx_id: 'e6f8b798-b253-47d5-8c23-d021aea3d7f4',
+      amount: 52.3,
+      tx_date: 2025-01-05T00:00:00.000Z
+    },
+    {
+      category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+      tx_id: 'c795b739-dce4-46a4-b295-d85435dae42c',
+      amount: 150,
+      tx_date: 2025-01-07T00:00:00.000Z
+    },
+    {
+      category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+      tx_id: '331b85b5-93df-437e-850a-f089c01f8932',
+      amount: 60,
+      tx_date: 2025-01-08T00:00:00.000Z
+    },
+    {
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+      amount: 35,
+      tx_date: 2025-01-10T00:00:00.000Z
+    },
+    {
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+      amount: 15.99,
+      tx_date: 2025-01-11T00:00:00.000Z
+    }
+  ]
+} => undefined
+
+
+Label.finalize { user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => undefined
+
+
+Requesting.respond { request: '019a5dab-ff01-7827-9716-ce7daec0338d', ok: true } => { request: '019a5dab-ff01-7827-9716-ce7daec0338d' }
+
+
+Label.getStagedLabelsInternal { user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => []
+
+
+Label.finalize { user_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => undefined
+
+
+Requesting.respond { request: '019a5dab-ff01-7827-9716-ce7daec0338d', ok: true } => { request: '019a5dab-ff01-7827-9716-ce7daec0338d' }
+
+[Requesting] Received request for path: /Transaction/get_unlabeled_transactions
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Transaction/get_unlabeled_transactions'
+} => { request: '019a5dac-0758-7286-a62d-99bf038c1d28' }
+
+
+Transaction.get_unlabeled_transactions { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => []
+
+
+Requesting.respond { request: '019a5dac-0758-7286-a62d-99bf038c1d28', results: [] } => { request: '019a5dac-0758-7286-a62d-99bf038c1d28' }
+
+[Requesting] Received request for path: /Transaction/get_unlabeled_transactions
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Transaction/get_unlabeled_transactions'
+} => { request: '019a5dac-0acd-7397-a873-73a942d919ed' }
+
+
+Transaction.get_unlabeled_transactions { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => []
+
+
+Requesting.respond { request: '019a5dac-0acd-7397-a873-73a942d919ed', results: [] } => { request: '019a5dac-0acd-7397-a873-73a942d919ed' }
+
+[Requesting] Received request for path: /Transaction/get_unlabeled_transactions
+[Requesting] Received request for path: /Category/getCategoriesFromOwner
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Category/getCategoriesFromOwner'
+} => { request: '019a5dac-1220-732b-96ac-487d4462c67c' }
+
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Transaction/get_unlabeled_transactions'
+} => { request: '019a5dac-121f-758b-9834-f78de6dff177' }
+
+
+Transaction.get_unlabeled_transactions { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => []
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+
+Requesting.respond { request: '019a5dac-121f-758b-9834-f78de6dff177', results: [] } => { request: '019a5dac-121f-758b-9834-f78de6dff177' }
+
+
+Requesting.respond {
+  request: '019a5dac-1220-732b-96ac-487d4462c67c',
+  results: [
+    {
+      category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+      name: 'Coffee'
+    },
+    {
+      category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+      name: 'Groceries'
+    },
+    {
+      category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+      name: 'Travel'
+    },
+    {
+      category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+      name: 'Misc'
+    },
+    {
+      category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+      name: 'Utilities'
+    },
+    {
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      name: 'Memberships'
+    }
+  ]
+} => { request: '019a5dac-1220-732b-96ac-487d4462c67c' }
+
+[Requesting] Received request for path: /Category/getCategoriesFromOwner
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Category/getCategoriesFromOwner'
+} => { request: '019a5dac-1c4e-7ec8-891a-60b9af972a9d' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dac-1c4e-7ec8-891a-60b9af972a9d',
+  results: [
+    {
+      category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+      name: 'Coffee'
+    },
+    {
+      category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+      name: 'Groceries'
+    },
+    {
+      category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+      name: 'Travel'
+    },
+    {
+      category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+      name: 'Misc'
+    },
+    {
+      category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+      name: 'Utilities'
+    },
+    {
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      name: 'Memberships'
+    }
+  ]
+} => { request: '019a5dac-1c4e-7ec8-891a-60b9af972a9d' }
+
+[Requesting] Received request for path: /Category/getCategoriesFromOwner
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Category/getCategoriesFromOwner'
+} => { request: '019a5dac-2eef-7e02-8339-8ea5076a9945' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dac-2eef-7e02-8339-8ea5076a9945',
+  results: [
+    {
+      category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+      name: 'Coffee'
+    },
+    {
+      category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+      name: 'Groceries'
+    },
+    {
+      category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+      name: 'Travel'
+    },
+    {
+      category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+      name: 'Misc'
+    },
+    {
+      category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+      name: 'Utilities'
+    },
+    {
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      name: 'Memberships'
+    }
+  ]
+} => { request: '019a5dac-2eef-7e02-8339-8ea5076a9945' }
+
+[Requesting] Received request for path: /Category/listTransactions
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+  category_name: 'Memberships',
+  path: '/Category/listTransactions'
+} => { request: '019a5dac-2f2e-741f-915e-b70b62c1797c' }
+
+
+Category.listTransactions {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285'
+} => [
+  {
+    tx_id: '52ed51b9-3cd2-4a32-aa72-821eb4a12341',
+    amount: 5.99,
+    tx_date: 2025-09-29T00:00:00.000Z
+  },
+  {
+    tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+    amount: 15.99,
+    tx_date: 2025-01-11T00:00:00.000Z
+  },
+  {
+    tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+    amount: 35,
+    tx_date: 2025-01-10T00:00:00.000Z
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dac-2f2e-741f-915e-b70b62c1797c',
+  results: [
+    {
+      tx_id: '52ed51b9-3cd2-4a32-aa72-821eb4a12341',
+      amount: 5.99,
+      tx_date: 2025-09-29T00:00:00.000Z
+    },
+    {
+      tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+      amount: 15.99,
+      tx_date: 2025-01-11T00:00:00.000Z
+    },
+    {
+      tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+      amount: 35,
+      tx_date: 2025-01-10T00:00:00.000Z
+    }
+  ]
+} => { request: '019a5dac-2f2e-741f-915e-b70b62c1797c' }
+
+[Requesting] Received request for path: /Transaction/getTxInfo
+[Requesting] Received request for path: /Transaction/getTxInfo
+[Requesting] Received request for path: /Transaction/getTxInfo
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  tx_id: '52ed51b9-3cd2-4a32-aa72-821eb4a12341',
+  path: '/Transaction/getTxInfo'
+} => { request: '019a5dac-2f7b-78d9-947b-4463a55645e0' }
+
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047',
+  path: '/Transaction/getTxInfo'
+} => { request: '019a5dac-2f7e-72d4-83ec-0358974aa039' }
+
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e',
+  path: '/Transaction/getTxInfo'
+} => { request: '019a5dac-2f7d-73e4-83c1-11e2a17c88d8' }
+
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: '52ed51b9-3cd2-4a32-aa72-821eb4a12341'
+} => [
+  {
+    txInfo: {
+      date: 2025-09-29T00:00:00.000Z,
+      merchant_text: 'Spotify P3AFB8623Don Sep 29, 2025collapsed',
+      amount: 5.99
+    }
+  }
+]
+
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-10T00:00:00.000Z,
+      merchant_text: 'Gym Membership',
+      amount: 35
+    }
+  }
+]
+
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-11T00:00:00.000Z,
+      merchant_text: 'Netflix Subscription',
+      amount: 15.99
+    }
+  }
+]
+
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: '52ed51b9-3cd2-4a32-aa72-821eb4a12341'
+} => [
+  {
+    txInfo: {
+      date: 2025-09-29T00:00:00.000Z,
+      merchant_text: 'Spotify P3AFB8623Don Sep 29, 2025collapsed',
+      amount: 5.99
+    }
+  }
+]
+
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'e139bc42-aa32-40f2-9160-a1a21c41e047'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-10T00:00:00.000Z,
+      merchant_text: 'Gym Membership',
+      amount: 35
+    }
+  }
+]
+
+
+Transaction.getTxInfoInternal {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  tx_id: 'a67cb6db-c3b3-4471-afc0-872b9ef3297e'
+} => [
+  {
+    txInfo: {
+      date: 2025-01-11T00:00:00.000Z,
+      merchant_text: 'Netflix Subscription',
+      amount: 15.99
+    }
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dac-2f7b-78d9-947b-4463a55645e0',
+  txInfo: {
+    date: 2025-09-29T00:00:00.000Z,
+    merchant_text: 'Spotify P3AFB8623Don Sep 29, 2025collapsed',
+    amount: 5.99
+  }
+} => { request: '019a5dac-2f7b-78d9-947b-4463a55645e0' }
+
+
+Requesting.respond {
+  request: '019a5dac-2f7e-72d4-83ec-0358974aa039',
+  txInfo: {
+    date: 2025-01-10T00:00:00.000Z,
+    merchant_text: 'Gym Membership',
+    amount: 35
+  }
+} => { request: '019a5dac-2f7e-72d4-83ec-0358974aa039' }
+
+
+Requesting.respond {
+  request: '019a5dac-2f7d-73e4-83c1-11e2a17c88d8',
+  txInfo: {
+    date: 2025-01-11T00:00:00.000Z,
+    merchant_text: 'Netflix Subscription',
+    amount: 15.99
+  }
+} => { request: '019a5dac-2f7d-73e4-83c1-11e2a17c88d8' }
+
+[Requesting] Received request for path: /Category/getMetricStats
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+  period: {
+    startDate: '2025-10-29T00:00:00.000Z',
+    endDate: '2025-11-07T23:59:59.999Z'
+  },
+  path: '/Category/getMetricStats'
+} => { request: '019a5dac-2ff5-712d-b9ab-e035bd1fbc40' }
+
+
+Category.getMetricStats {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+  period: {
+    startDate: '2025-10-29T00:00:00.000Z',
+    endDate: '2025-11-07T23:59:59.999Z'
+  }
+} => [
+  {
+    stats: {
+      total_amount: 0,
+      transaction_count: 0,
+      average_per_day: 0,
+      days: 10
+    }
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dac-2ff5-712d-b9ab-e035bd1fbc40',
+  stats: {
+    total_amount: 0,
+    transaction_count: 0,
+    average_per_day: 0,
+    days: 10
+  }
+} => { request: '019a5dac-2ff5-712d-b9ab-e035bd1fbc40' }
+
+[Requesting] Received request for path: /Category/getMetricStats
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+  period: {
+    startDate: '2025-09-01T00:00:00.000Z',
+    endDate: '2025-11-07T23:59:59.999Z'
+  },
+  path: '/Category/getMetricStats'
+} => { request: '019a5dac-8e92-7b66-8ef0-84e35b9305b8' }
+
+
+Category.getMetricStats {
+  owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448',
+  category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+  period: {
+    startDate: '2025-09-01T00:00:00.000Z',
+    endDate: '2025-11-07T23:59:59.999Z'
+  }
+} => [
+  {
+    stats: {
+      total_amount: 5.99,
+      transaction_count: 1,
+      average_per_day: 0.08808823529411765,
+      days: 68
+    }
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dac-8e92-7b66-8ef0-84e35b9305b8',
+  stats: {
+    total_amount: 5.99,
+    transaction_count: 1,
+    average_per_day: 0.08808823529411765,
+    days: 68
+  }
+} => { request: '019a5dac-8e92-7b66-8ef0-84e35b9305b8' }
+
+[Requesting] Received request for path: /Category/getCategoriesFromOwner
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Category/getCategoriesFromOwner'
+} => { request: '019a5dac-db87-760e-a6e3-b8900a81aa15' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+
+Requesting.respond {
+  request: '019a5dac-db87-760e-a6e3-b8900a81aa15',
+  results: [
+    {
+      category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+      name: 'Coffee'
+    },
+    {
+      category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+      name: 'Groceries'
+    },
+    {
+      category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+      name: 'Travel'
+    },
+    {
+      category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+      name: 'Misc'
+    },
+    {
+      category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+      name: 'Utilities'
+    },
+    {
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      name: 'Memberships'
+    }
+  ]
+} => { request: '019a5dac-db87-760e-a6e3-b8900a81aa15' }
+
+[Requesting] Received request for path: /Category/getCategoriesFromOwner
+[Requesting] Received request for path: /Transaction/get_unlabeled_transactions
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Category/getCategoriesFromOwner'
+} => { request: '019a5dac-f28b-7401-b709-7c15dd4ac234' }
+
+
+Requesting.request {
+  session: '019a5daa-e2c6-73f7-9877-3f5f2b475781',
+  path: '/Transaction/get_unlabeled_transactions'
+} => { request: '019a5dac-f28c-766f-a665-b144fe7ad09a' }
+
+
+Category.getCategoriesFromOwner { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => [
+  {
+    category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+    name: 'Coffee'
+  },
+  {
+    category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+    name: 'Groceries'
+  },
+  {
+    category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+    name: 'Travel'
+  },
+  { category_id: '0d48bd67-eb52-457b-886e-65ce4872f302', name: 'Misc' },
+  {
+    category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+    name: 'Utilities'
+  },
+  {
+    category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+    name: 'Memberships'
+  }
+]
+
+
+Transaction.get_unlabeled_transactions { owner_id: '019a5d7a-5589-7792-a4a6-03a7679e5448' } => []
+
+
+Requesting.respond {
+  request: '019a5dac-f28b-7401-b709-7c15dd4ac234',
+  results: [
+    {
+      category_id: '6db7a5bc-48f8-4103-a28e-07f77fdc50bd',
+      name: 'Coffee'
+    },
+    {
+      category_id: '3e6b4924-194d-4610-97f1-1c67b2960b2e',
+      name: 'Groceries'
+    },
+    {
+      category_id: 'bb21bf8d-8064-4de1-9aef-3dca7697a9a1',
+      name: 'Travel'
+    },
+    {
+      category_id: '0d48bd67-eb52-457b-886e-65ce4872f302',
+      name: 'Misc'
+    },
+    {
+      category_id: '78c18df5-23c2-4900-b084-2c45940b6de5',
+      name: 'Utilities'
+    },
+    {
+      category_id: '33c3514a-2b4f-433e-94a3-1d0cb65a7285',
+      name: 'Memberships'
+    }
+  ]
+} => { request: '019a5dac-f28b-7401-b709-7c15dd4ac234' }
+
+
+Requesting.respond { request: '019a5dac-f28c-766f-a665-b144fe7ad09a', results: [] } => { request: '019a5dac-f28c-766f-a665-b144fe7ad09a' }

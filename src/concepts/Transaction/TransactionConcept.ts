@@ -126,14 +126,17 @@ export default class TransactionConcept {
    * @returns A Promise that resolves to the TransactionDoc.
    * @throws An Error if the transaction is not found for the given owner.
    */
-  async getTransaction(owner_id: Id, tx_id: Id): Promise<TransactionDoc>;
+  async getTransaction(
+    owner_id: Id,
+    tx_id: Id,
+  ): Promise<{ tx: TransactionDoc }[]>;
   async getTransaction(
     payload: { owner_id: string; tx_id: string },
-  ): Promise<TransactionDoc>;
+  ): Promise<{ tx: TransactionDoc }[]>;
   async getTransaction(
     a: Id | { owner_id: string; tx_id: string },
     b?: Id,
-  ): Promise<TransactionDoc> {
+  ): Promise<{ tx: TransactionDoc }[]> {
     // narrow both styles
     const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
     const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
@@ -151,8 +154,7 @@ export default class TransactionConcept {
         `Transaction with ID ${tx_id.toString()} not found for owner ${ownerIdStr}.`,
       );
     }
-
-    return tx;
+    return [{ tx: tx }];
   }
 
   /**
@@ -217,6 +219,42 @@ export default class TransactionConcept {
 
     return { tx_id: tx_id };
   }
+
+  /**
+   * Implements a bulk 'mark_labeled' action by calling `mark_labeled` in parallel.
+   * Sets multiple transactions' status to LABELED.
+   *
+   * @param tx_ids The list of transaction IDs to mark as labeled.
+   * @param requester_id The ID of the user requesting the action.
+   * @returns A Promise resolving to an object with `{ ok: true }` on success.
+   * @throws An Error if any of the individual `mark_labeled` calls fail.
+   */
+  async bulk_mark_labeled(
+    { tx_ids, requester_id }: { tx_ids: string[]; requester_id: string },
+  ): Promise<void> {
+    if (!tx_ids || tx_ids.length === 0) {
+      return; // Nothing to do
+    }
+
+    const requesterId = Id.from(requester_id);
+
+    const promises = tx_ids.map((tx_id) =>
+      this.mark_labeled(Id.from(tx_id), requesterId)
+    );
+
+    try {
+      await Promise.all(promises);
+      return;
+    } catch (error) {
+      console.error("Error during bulk mark labeled:", error);
+      throw new Error(
+        `One or more transactions failed to be marked as labeled. First error: ${
+          (error as Error).message
+        }`,
+      );
+    }
+  }
+
   private async add_transaction(
     owner_id: Id,
     parsedTxInfo: ParsedTransactionInfo,
@@ -481,10 +519,46 @@ export default class TransactionConcept {
     a: Id | { owner_id: string },
   ): Promise<TransactionDoc[]> {
     const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
-    return await this.transactions.find({
-      owner_id: owner_id.toString(),
-      status: TransactionStatus.UNLABELED,
-    }).toArray();
+    try {
+      // console.trace("[TransactionConcept] get_unlabeled_transactions - entry", {
+      //   owner_id: owner_id.toString(),
+      // });
+
+      const cursor = this.transactions.find({
+        owner_id: owner_id.toString(),
+        status: TransactionStatus.UNLABELED,
+      });
+
+      const results = await cursor.toArray();
+
+      // console.trace(
+      //   "[TransactionConcept] get_unlabeled_transactions - result",
+      //   { owner_id: owner_id.toString(), count: results.length },
+      // );
+
+      // Log a small sample when the set is non-empty (avoid logging huge payloads)
+      // if (results.length > 0) {
+      //   const sample = results.slice(0, 5).map((r) => ({
+      //     tx_id: r.tx_id,
+      //     date: r.date,
+      //     merchant_text: r.merchant_text,
+      //     amount: r.amount,
+      //     status: r.status,
+      //   }));
+      //   console.debug(
+      //     "[TransactionConcept] get_unlabeled_transactions - sample",
+      //     { owner_id: owner_id.toString(), sample },
+      //   );
+      // }
+
+      return results;
+    } catch (e) {
+      console.error(
+        "[TransactionConcept] get_unlabeled_transactions - error",
+        { owner_id: owner_id.toString(), error: (e as Error).message },
+      );
+      throw e;
+    }
   }
 
   /**
@@ -512,23 +586,35 @@ export default class TransactionConcept {
    * This mirrors the information previously exposed by LabelConcept.getTxInfo but lives
    * in TransactionConcept where transaction data is authoritative.
    */
-  async getTxInfo(owner_id: Id, tx_id: Id): Promise<ParsedTransactionInfo>;
-  async getTxInfo(
-    payload: { owner_id: string; tx_id: string },
-  ): Promise<ParsedTransactionInfo>;
+  async getTxInfoInternal(
+    { owner_id, tx_id }: { owner_id: string; tx_id: string },
+  ): Promise<{ txInfo: ParsedTransactionInfo }[]> {
+    const ownerId = Id.from(owner_id);
+    const txId = Id.from(tx_id);
+
+    const txs = await this.getTransaction(ownerId, txId);
+    // Map and wrap the result in the format expected by the sync engine.
+    return txs.map(({ tx }) => ({
+      txInfo: {
+        date: tx.date,
+        merchant_text: tx.merchant_text,
+        amount: tx.amount,
+      },
+    }));
+  }
   async getTxInfo(
     a: Id | { owner_id: string; tx_id: string },
     b?: Id,
-  ): Promise<ParsedTransactionInfo> {
+  ): Promise<ParsedTransactionInfo[]> {
     const owner_id = a instanceof Id ? a : Id.from(a.owner_id);
     const tx_id = a instanceof Id ? b! : Id.from(a.tx_id);
 
-    const tx = await this.getTransaction(owner_id, tx_id);
-    // map TransactionDoc -> ParsedTransactionInfo
-    return {
+    const txs = await this.getTransaction(owner_id, tx_id);
+    // Map the wrapped TransactionDoc into the pared-down info we expose to callers.
+    return txs.map(({ tx }) => ({
       date: tx.date,
       merchant_text: tx.merchant_text,
       amount: tx.amount,
-    };
+    }));
   }
 }
