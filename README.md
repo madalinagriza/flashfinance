@@ -7,7 +7,7 @@ FlashFinance is a Deno-powered backend for personal finance labeling: users impo
 - **Trace**: [`trace-UserJourney.md`](trace-UserJourney.md) (end-to-end sync log from login through labeling)
 - **Aggregated design decisions**: [`Aggregated-designDoc.md`](Aggregated-designDoc.md)
 - **Implementation reflections**: [`Reflections.md`](Reflections.md)
-
+- **Sample CSV File To Try**: [`sample-spendings.md](src\concepts\Transaction\test-actions\sample\sample-spendings.csv)
 
 ## Concept Overview
 - **Transactions** ([`Transaction/Spec.md`](src/concepts/Transaction/Spec.md)): Imports CSV rows into immutable transaction records, tracks UNLABELED/LABELED status, and supports both single and bulk labeling workflows.
