@@ -70,12 +70,6 @@ export const exclusions: Array<string> = [
   "/api/Label/hasAnyLabelsForCategory", // depends
   "/api/Category/getCategoryNamesAndOwners",
   "/api/Category/bulk_add_transaction",
-  "/api/FileUploading/requestUploadURL",
-  "/api/FileUploading/confirmUpload",
-  "/api/FileUploading/_getOwner",
-  "/api/FileUploading/_getFilename",
-  "/api/FileUploading/_getFilesByOwner",
-  "/api/FileUploading/_getFileContent",
   "/api/Sessioning/create",
   "/api/Sessioning/delete",
   "/api/Sessioning/_getUser",

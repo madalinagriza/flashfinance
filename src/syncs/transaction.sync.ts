@@ -1,5 +1,5 @@
 import { actions, Frames, Sync } from "@engine";
-import { FileUploading, Requesting, Sessioning, Transaction } from "@concepts";
+import { Requesting, Sessioning, Transaction } from "@concepts";
 
 //-- Import Transactions --//
 export const ImportTransactionsRequest: Sync = (
@@ -35,37 +35,6 @@ export const ImportTransactionsResponseError: Sync = ({ request, error }) => ({
     [Transaction.import_transactions, {}, { error }],
   ),
   then: actions([Requesting.respond, { request, error }]),
-});
-
-/**
- * This synchronization creates a pipeline between the FileUploading and Transaction concepts.
- * When a file upload is successfully confirmed, this sync automatically triggers the
- * transaction import process using the content of that file.
- */
-export const ImportTransactionsOnUpload: Sync = (
-  { file, owner, content },
-) => ({
-  // WHEN a file upload is successfully confirmed...
-  when: actions(
-    [FileUploading.confirmUpload, {}, { file }],
-  ),
-  // WHERE we can retrieve the file's owner and content...
-  where: async (frames) => {
-    frames = await frames.query(FileUploading._getOwner, { file }, { owner });
-    frames = await frames.query(
-      FileUploading._getFileContent,
-      { file },
-      { content },
-    );
-    return frames;
-  },
-  // THEN import the transactions from the file content for that owner.
-  then: actions(
-    [Transaction.import_transactions, {
-      owner_id: owner,
-      fileContent: content,
-    }],
-  ),
 });
 
 /**
